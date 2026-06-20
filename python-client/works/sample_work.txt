@@ -1,0 +1,9 @@
+This is a sample work file for testing the Proof-of-Existence system.
+
+You can replace this file with your own content, or add new files to
+the works/ directory. Each file can be registered on the blockchain
+to prove its existence at a specific point in time.
+
+Usage:
+  python -m proof_client.register_file works/sample_work.txt
+  python -m proof_client.verify_file works/sample_work.txt

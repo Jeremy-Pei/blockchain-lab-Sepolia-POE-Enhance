@@ -1,0 +1,80 @@
+[
+  {
+    "type": "function",
+    "name": "register",
+    "inputs": [
+      {
+        "name": "fileHash",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "uri",
+        "type": "string",
+        "internalType": "string"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "verify",
+    "inputs": [
+      {
+        "name": "fileHash",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "owner",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "timestamp",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "uri",
+        "type": "string",
+        "internalType": "string"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "event",
+    "name": "Registered",
+    "inputs": [
+      {
+        "name": "fileHash",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "owner",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "timestamp",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "uri",
+        "type": "string",
+        "indexed": false,
+        "internalType": "string"
+      }
+    ],
+    "anonymous": false
+  }
+]

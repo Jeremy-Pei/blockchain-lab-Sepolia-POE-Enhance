@@ -1,0 +1,119 @@
+"""
+evidence_repository.py — SQLite 证据仓库
+
+使用 SQLite 数据库持久化存储证据记录，支持高效查询和统计。
+与 evidence_store.py (JSON 文件) 互补：
+  - JSON 文件：用于导出、分享和人类可读
+  - SQLite 数据库：用于高效查询、统计和批量操作
+"""
+
+import sqlite3
+from pathlib import Path
+
+from proof_client.config import DB_PATH
+from proof_client.evidence_schema import EvidenceRecord
+
+
+_CREATE_TABLE_SQL = """
+CREATE TABLE IF NOT EXISTS evidence (
+    id               INTEGER PRIMARY KEY AUTOINCREMENT,
+    file_name        TEXT    NOT NULL,
+    file_hash        TEXT    NOT NULL UNIQUE,
+    uri              TEXT    NOT NULL,
+    tx_hash          TEXT    DEFAULT '',
+    block_number     INTEGER DEFAULT 0,
+    gas_used         INTEGER DEFAULT 0,
+    owner            TEXT    DEFAULT '',
+    timestamp        INTEGER DEFAULT 0,
+    status           TEXT    DEFAULT '',
+    network          TEXT    DEFAULT 'Ethereum Sepolia',
+    chain_id         INTEGER DEFAULT 11155111,
+    contract_address TEXT    DEFAULT '',
+    explorer_tx_url  TEXT    DEFAULT '',
+    created_at       TEXT    NOT NULL,
+    note             TEXT
+)
+"""
+
+
+def _get_conn(db_path: Path | None = None) -> sqlite3.Connection:
+    """获取数据库连接并确保表存在。"""
+    conn = sqlite3.connect(str(db_path or DB_PATH))
+    conn.row_factory = sqlite3.Row
+    conn.execute(_CREATE_TABLE_SQL)
+    conn.commit()
+    return conn
+
+
+def insert(record: EvidenceRecord) -> int:
+    """
+    插入一条证据记录。
+
+    Args:
+        record: EvidenceRecord 实例。
+
+    Returns:
+        插入行的 rowid。
+    """
+    conn = _get_conn()
+    d = record.to_dict()
+    cols = ", ".join(d.keys())
+    placeholders = ", ".join(["?"] * len(d))
+
+    try:
+        cur = conn.execute(
+            f"INSERT INTO evidence ({cols}) VALUES ({placeholders})",
+            list(d.values()),
+        )
+        conn.commit()
+        return cur.lastrowid
+    finally:
+        conn.close()
+
+
+def find_by_hash(file_hash: str) -> EvidenceRecord | None:
+    """根据文件哈希查找证据记录。"""
+    conn = _get_conn()
+    try:
+        row = conn.execute(
+            "SELECT * FROM evidence WHERE file_hash = ?", (file_hash,)
+        ).fetchone()
+        if row is None:
+            return None
+        return EvidenceRecord.from_dict(dict(row))
+    finally:
+        conn.close()
+
+
+def find_all() -> list[EvidenceRecord]:
+    """查询所有证据记录，按 id 降序排列。"""
+    conn = _get_conn()
+    try:
+        rows = conn.execute(
+            "SELECT * FROM evidence ORDER BY id DESC"
+        ).fetchall()
+        return [EvidenceRecord.from_dict(dict(r)) for r in rows]
+    finally:
+        conn.close()
+
+
+def count() -> int:
+    """返回证据记录总数。"""
+    conn = _get_conn()
+    try:
+        return conn.execute("SELECT COUNT(*) FROM evidence").fetchone()[0]
+    finally:
+        conn.close()
+
+
+def find_by_owner(owner: str) -> list[EvidenceRecord]:
+    """根据 owner 地址查找证据记录。"""
+    conn = _get_conn()
+    try:
+        rows = conn.execute(
+            "SELECT * FROM evidence WHERE owner = ? ORDER BY id DESC",
+            (owner,),
+        ).fetchall()
+        return [EvidenceRecord.from_dict(dict(r)) for r in rows]
+    finally:
+        conn.close()
