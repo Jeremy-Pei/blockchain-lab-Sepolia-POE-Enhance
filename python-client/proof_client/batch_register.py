@@ -1,7 +1,7 @@
 """
-batch_register.py — 批量注册文件
+batch_register.py — Batch file registration
 
-扫描 works/ 目录下的所有文件，逐一注册到链上。
+Scans the works/ directory and registers every file on-chain.
 """
 
 import sys
@@ -17,32 +17,32 @@ def batch_register(
     pattern: str = "*",
 ) -> list[EvidenceRecord]:
     """
-    批量注册目录下的所有文件。
+    Register all files in a directory on-chain.
 
     Args:
-        directory: 要扫描的目录，默认为 works/。
-        pattern: glob 匹配模式，默认 '*' 匹配所有文件。
+        directory: Directory to scan; defaults to works/.
+        pattern: Glob pattern; defaults to '*' (all files).
 
     Returns:
-        成功注册的 EvidenceRecord 列表。
+        List of successfully registered EvidenceRecord instances.
     """
     dir_path = Path(directory) if directory else WORKS_DIR
 
     if not dir_path.exists():
-        print(f"❌ 目录不存在: {dir_path}")
+        print(f"❌ Directory not found: {dir_path}")
         return []
 
-    # 收集文件（排除隐藏文件和目录）
+    # Collect files (exclude hidden files and directories)
     files = sorted(
         f for f in dir_path.glob(pattern)
         if f.is_file() and not f.name.startswith(".")
     )
 
     if not files:
-        print(f"⚠️  目录 {dir_path} 下没有找到匹配的文件。")
+        print(f"⚠️  No matching files found in {dir_path}.")
         return []
 
-    print(f"📂 找到 {len(files)} 个文件待注册:")
+    print(f"📂 Found {len(files)} file(s) to register:")
     for i, f in enumerate(files, 1):
         print(f"   {i}. {f.name}")
     print()
@@ -52,30 +52,30 @@ def batch_register(
 
     for i, f in enumerate(files, 1):
         print(f"{'='*60}")
-        print(f"[{i}/{len(files)}] 正在注册: {f.name}")
+        print(f"[{i}/{len(files)}] Registering: {f.name}")
         print(f"{'='*60}")
         try:
             record = register_file(str(f))
             results.append(record)
         except Exception as e:
-            print(f"❌ 注册失败: {e}")
+            print(f"❌ Registration failed: {e}")
             failed.append((f.name, str(e)))
         print()
 
-    # 汇总
+    # Summary
     print(f"{'='*60}")
-    print(f"📊 批量注册完成")
-    print(f"   成功: {len(results)}")
-    print(f"   失败: {len(failed)}")
+    print(f"📊 Batch registration complete")
+    print(f"   Succeeded: {len(results)}")
+    print(f"   Failed:    {len(failed)}")
     if failed:
-        print(f"   失败文件:")
+        print(f"   Failed files:")
         for name, err in failed:
             print(f"     - {name}: {err}")
 
     return results
 
 
-# ── CLI 入口 ──────────────────────────────────────────────────────
+# ── CLI entry point ───────────────────────────────────────────────
 if __name__ == "__main__":
     directory = sys.argv[1] if len(sys.argv) > 1 else None
     batch_register(directory)

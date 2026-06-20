@@ -1,7 +1,7 @@
 """
-config.py — 统一配置管理
+config.py — Unified configuration management
 
-从 .env 文件加载环境变量，并提供项目路径常量。
+Loads environment variables from .env and provides project path constants.
 """
 
 import os
@@ -9,7 +9,7 @@ import json
 from pathlib import Path
 from dotenv import load_dotenv
 
-# ── 项目路径 ──────────────────────────────────────────────────────
+# ── Project paths ─────────────────────────────────────────────────
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 load_dotenv(PROJECT_ROOT / ".env")
 
@@ -19,22 +19,22 @@ EVIDENCE_DIR = PROJECT_ROOT / "evidence"
 REPORTS_DIR = PROJECT_ROOT / "reports"
 DB_PATH = PROJECT_ROOT / "evidence.db"
 
-# 确保必要的目录存在
+# Ensure required directories exist
 for d in (WORKS_DIR, EVIDENCE_DIR, REPORTS_DIR):
     d.mkdir(parents=True, exist_ok=True)
 
-# ── 区块链配置 ────────────────────────────────────────────────────
+# ── Blockchain configuration ──────────────────────────────────────
 RPC_URL = os.getenv("RPC_URL", "")
 PRIVATE_KEY = os.getenv("PRIVATE_KEY", "")
 CONTRACT_ADDRESS = os.getenv("CONTRACT_ADDRESS", "")
 CHAIN_ID = int(os.getenv("CHAIN_ID", "11155111"))
 EXPLORER_TX_URL = os.getenv("EXPLORER_TX_URL", "https://sepolia.etherscan.io/tx/")
 
-# ── 加载 ABI ──────────────────────────────────────────────────────
+# ── Load ABI ──────────────────────────────────────────────────────
 ABI_PATH = ABI_DIR / "ProofOfExistence.json"
 
 
 def load_abi() -> list:
-    """加载合约 ABI JSON。"""
+    """Load the contract ABI from JSON."""
     with open(ABI_PATH, "r", encoding="utf-8") as f:
         return json.load(f)

@@ -1,8 +1,8 @@
 """
-evidence_store.py — 证据 JSON 文件持久化
+evidence_store.py — Evidence JSON file persistence
 
-将 EvidenceRecord 保存为 evidence/evidence_<hash前8位>.json 文件，
-并支持加载已有的证据文件。
+Saves EvidenceRecord objects as evidence/evidence_<hash8>.json files
+and supports loading existing evidence files.
 """
 
 import json
@@ -13,20 +13,20 @@ from proof_client.evidence_schema import EvidenceRecord
 
 
 def _evidence_filename(file_hash: str) -> str:
-    """根据文件哈希生成证据文件名。"""
+    """Generate an evidence filename from a file hash."""
     short = file_hash.replace("0x", "")[:8]
     return f"evidence_{short}.json"
 
 
 def save_evidence(record: EvidenceRecord) -> Path:
     """
-    将证据记录保存为 JSON 文件。
+    Save an evidence record as a JSON file.
 
     Args:
-        record: EvidenceRecord 实例。
+        record: EvidenceRecord instance.
 
     Returns:
-        保存的文件路径。
+        Path to the saved file.
     """
     filename = _evidence_filename(record.file_hash)
     path = EVIDENCE_DIR / filename
@@ -34,19 +34,19 @@ def save_evidence(record: EvidenceRecord) -> Path:
     with open(path, "w", encoding="utf-8") as f:
         json.dump(record.to_dict(), f, ensure_ascii=False, indent=2)
 
-    print(f"✅ 证据已保存: {path}")
+    print(f"✅ Evidence saved: {path}")
     return path
 
 
 def load_evidence(file_hash: str) -> EvidenceRecord | None:
     """
-    根据文件哈希加载证据 JSON 文件。
+    Load an evidence JSON file by file hash.
 
     Args:
-        file_hash: 0x 前缀的 SHA-256 哈希。
+        file_hash: 0x-prefixed SHA-256 hash.
 
     Returns:
-        EvidenceRecord 实例，如果文件不存在则返回 None。
+        EvidenceRecord instance, or None if the file does not exist.
     """
     filename = _evidence_filename(file_hash)
     path = EVIDENCE_DIR / filename
@@ -62,10 +62,10 @@ def load_evidence(file_hash: str) -> EvidenceRecord | None:
 
 def list_all_evidence() -> list[EvidenceRecord]:
     """
-    加载 evidence/ 目录下的所有证据文件。
+    Load all evidence files from the evidence/ directory.
 
     Returns:
-        EvidenceRecord 列表，按文件名排序。
+        List of EvidenceRecord instances sorted by filename.
     """
     records = []
     for path in sorted(EVIDENCE_DIR.glob("evidence_*.json")):

@@ -1,8 +1,8 @@
 """
-contract_client.py — ProofOfExistence 合约交互客户端
+contract_client.py — ProofOfExistence contract interaction client
 
-封装 register / verify 两个核心合约方法，
-处理交易构建、签名、发送和回执等待。
+Wraps the register / verify contract methods, handling transaction
+building, signing, submission, and receipt waiting.
 """
 
 from web3 import Web3
@@ -13,7 +13,7 @@ from proof_client.wallet import get_w3, get_account, get_chain_id
 
 
 def _get_contract() -> tuple[Web3, Contract]:
-    """返回 (w3, contract) 元组。"""
+    """Return a (w3, contract) tuple."""
     w3 = get_w3()
     abi = load_abi()
     contract = w3.eth.contract(
@@ -25,19 +25,19 @@ def _get_contract() -> tuple[Web3, Contract]:
 
 def register_hash(file_hash: str, uri: str) -> dict:
     """
-    调用合约的 register(fileHash, uri) 方法。
+    Call the contract's register(fileHash, uri) method.
 
     Args:
-        file_hash: 0x 前缀的 SHA-256 文件哈希。
-        uri: 文件标识符 / 路径。
+        file_hash: 0x-prefixed SHA-256 hash of the file.
+        uri: File identifier / path.
 
     Returns:
-        包含 tx_hash, block_number, gas_used, status 的字典。
+        Dict containing tx_hash, block_number, gas_used, and status.
     """
     w3, contract = _get_contract()
     account = get_account()
 
-    # 将十六进制字符串转为 bytes32
+    # Convert hex string to bytes32
     hash_bytes = bytes.fromhex(file_hash.replace("0x", ""))
 
     tx = contract.functions.register(hash_bytes, uri).build_transaction({
@@ -62,14 +62,14 @@ def register_hash(file_hash: str, uri: str) -> dict:
 
 def verify_hash(file_hash: str) -> dict:
     """
-    调用合约的 verify(fileHash) 视图方法。
+    Call the contract's verify(fileHash) view method.
 
     Args:
-        file_hash: 0x 前缀的 SHA-256 文件哈希。
+        file_hash: 0x-prefixed SHA-256 hash of the file.
 
     Returns:
-        包含 owner, timestamp, uri, registered 的字典。
-        如果 timestamp 为 0，表示该哈希尚未注册。
+        Dict containing owner, timestamp, uri, and registered flag.
+        If timestamp is 0, the hash has not been registered.
     """
     w3, contract = _get_contract()
     hash_bytes = bytes.fromhex(file_hash.replace("0x", ""))

@@ -1,62 +1,65 @@
 # Blockchain Lab — Proof of Existence (Sepolia Enhanced)
 
-> 🎓 **学习型项目** — 区块链存证原型系统，用于学习 Solidity + Python + Web3 开发。
+> 🎓 **Learning project** — A blockchain proof-of-existence prototype for learning
+> Solidity + Python + Web3 development.
 >
-> ⚠️ 这不是正式的版权存证产品，仅作为技术学习和教学案例使用。
+> ⚠️ This is not a production copyright registration product; it is intended for
+> technical learning and as a teaching reference.
 
-## 📋 项目简介
+## Overview
 
-本项目实现了一个基于以太坊 Sepolia 测试网的 **Proof of Existence (存在性证明)** 系统：
+This project implements a **Proof of Existence** system on the Ethereum Sepolia
+testnet:
 
-1. 计算文件的 SHA-256 哈希
-2. 将哈希提交到智能合约
-3. 利用区块链的不可篡改性证明文件在特定时间点的存在
+1. Compute the SHA-256 hash of a file
+2. Submit the hash to a smart contract
+3. Use the blockchain's immutability to prove the file existed at a specific point in time
 
-### 技术栈
+### Tech Stack
 
-| 层级 | 技术 | 用途 |
-|------|------|------|
-| 智能合约 | Solidity 0.8.24 / Foundry | ProofOfExistence 合约 |
-| 客户端 | Python 3.12+ / web3.py | 文件注册、验证、证据管理 |
-| 底层概念 | C++ | 区块链基础数据结构学习 |
-| 测试网 | Ethereum Sepolia | 链上部署与交互 |
+| Layer | Technology | Purpose |
+|-------|------------|---------|
+| Smart contract | Solidity 0.8.24 / Foundry | ProofOfExistence contract |
+| Client | Python 3.12+ / web3.py | File registration, verification, evidence management |
+| Concepts | C++ | Blockchain fundamentals and data structures |
+| Testnet | Ethereum Sepolia | On-chain deployment and interaction |
 
-## 🏗️ 项目结构
+## Project Structure
 
 ```
 blockchain-lab-Sepolia-POE-Enhance/
 │
-├── contracts/                  # Solidity 智能合约 (Foundry)
+├── contracts/                  # Solidity smart contracts (Foundry)
 │   ├── src/ProofOfExistence.sol
 │   ├── test/
 │   ├── foundry.toml
 │   └── .env.example
 │
-├── python-client/              # Python 客户端工具包
-│   ├── proof_client/           # 核心包
-│   │   ├── config.py           #   统一配置管理
-│   │   ├── hash_file.py        #   SHA-256 哈希计算
-│   │   ├── wallet.py           #   Web3 连接 & 钱包管理
-│   │   ├── contract_client.py  #   合约调用封装
-│   │   ├── evidence_schema.py  #   证据数据结构 (dataclass)
-│   │   ├── evidence_store.py   #   证据 JSON 持久化
-│   │   ├── evidence_repository.py  # 证据 SQLite 持久化
-│   │   ├── register_file.py    #   注册文件到链上
-│   │   ├── verify_file.py      #   验证文件链上状态
-│   │   ├── batch_register.py   #   批量注册
-│   │   ├── generate_report.py  #   Markdown 存证报告
-│   │   ├── query_evidence.py   #   查询证据记录
-│   │   └── test_all.py         #   全模块测试
+├── python-client/              # Python client toolkit
+│   ├── proof_client/           # Core package
+│   │   ├── config.py           #   Unified configuration management
+│   │   ├── hash_file.py        #   SHA-256 hash computation
+│   │   ├── wallet.py           #   Web3 connection & wallet management
+│   │   ├── contract_client.py  #   Contract call wrappers
+│   │   ├── evidence_schema.py  #   Evidence data structure (dataclass)
+│   │   ├── evidence_store.py   #   Evidence JSON persistence
+│   │   ├── evidence_repository.py  # Evidence SQLite persistence
+│   │   ├── register_file.py    #   Register a file on-chain
+│   │   ├── verify_file.py      #   Verify on-chain registration status
+│   │   ├── batch_register.py   #   Batch registration
+│   │   ├── generate_report.py  #   Markdown proof report generator
+│   │   ├── query_evidence.py   #   Query evidence records
+│   │   └── test_all.py         #   Full module test suite
 │   ├── abi/ProofOfExistence.json
-│   ├── works/                  #   待注册的作品文件
-│   ├── evidence/               #   生成的证据 JSON
-│   ├── reports/                #   生成的存证报告
+│   ├── works/                  #   Files to register
+│   ├── evidence/               #   Generated evidence JSON files
+│   ├── reports/                #   Generated proof reports
 │   ├── .env.example
 │   └── requirements.txt
 │
-├── cpp-core/                   # C++ 区块链概念学习
+├── cpp-core/                   # C++ blockchain concept learning
 │
-├── docs/                       # 设计文档
+├── docs/                       # Design documents
 │   ├── proof_of_existence_design.md
 │   ├── evidence_package.md
 │   └── ...
@@ -64,94 +67,94 @@ blockchain-lab-Sepolia-POE-Enhance/
 └── README.md
 ```
 
-## 🚀 快速开始
+## Quick Start
 
-### 前置要求
+### Prerequisites
 
 - Python 3.12+
-- [Foundry](https://getfoundry.sh/) (用于合约编译和部署)
-- Sepolia 测试网 ETH (可从 [faucet](https://www.alchemy.com/faucets/ethereum-sepolia) 获取)
+- [Foundry](https://getfoundry.sh/) (for contract compilation and deployment)
+- Sepolia testnet ETH (available from the [Alchemy faucet](https://www.alchemy.com/faucets/ethereum-sepolia))
 - Alchemy / Infura RPC API Key
 
-### 1. 克隆项目
+### 1. Clone the repository
 
 ```bash
-git clone https://github.com/your-username/blockchain-lab-Sepolia-POE-Enhance.git
+git clone https://github.com/Jeremy-Pei/blockchain-lab-Sepolia-POE-Enhance.git
 cd blockchain-lab-Sepolia-POE-Enhance
 ```
 
-### 2. 配置环境
+### 2. Configure environment variables
 
 ```bash
-# Python 客户端
+# Python client
 cd python-client
 cp .env.example .env
-# 编辑 .env，填入你的 RPC_URL、PRIVATE_KEY、CONTRACT_ADDRESS
+# Edit .env and fill in your RPC_URL, PRIVATE_KEY, and CONTRACT_ADDRESS
 nano .env
 
-# 创建虚拟环境并安装依赖
+# Create a virtual environment and install dependencies
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 3. 使用
+### 3. Usage
 
 ```bash
 cd python-client
 export PYTHONPATH=.
 
-# 计算文件哈希
+# Compute a file hash
 python -m proof_client.hash_file works/sample_work.txt
 
-# 注册文件到链上
+# Register a file on-chain
 python -m proof_client.register_file works/sample_work.txt
 
-# 验证文件
+# Verify a file
 python -m proof_client.verify_file works/sample_work.txt
 
-# 批量注册 works/ 目录下的所有文件
+# Batch-register all files in works/
 python -m proof_client.batch_register
 
-# 生成存证报告
+# Generate a proof report
 python -m proof_client.generate_report <file_hash>
 python -m proof_client.generate_report --all
 
-# 查询证据
+# Query evidence records
 python -m proof_client.query_evidence --all
 python -m proof_client.query_evidence --hash <file_hash>
 python -m proof_client.query_evidence --owner <address>
 python -m proof_client.query_evidence --stats
 ```
 
-### 4. 运行测试
+### 4. Run tests
 
 ```bash
 cd python-client
 export PYTHONPATH=.
 
-# 本地测试（不连链，49 项测试）
+# Local tests only (no on-chain calls, 49 test cases)
 python -m proof_client.test_all
 
-# 含链上测试（需要 Sepolia ETH，会消耗 gas）
+# Include on-chain tests (requires Sepolia ETH, consumes gas)
 python -m proof_client.test_all --chain
 ```
 
-## 📝 智能合约
+## Smart Contract
 
-[ProofOfExistence.sol](contracts/src/ProofOfExistence.sol) 提供两个核心方法：
+[ProofOfExistence.sol](contracts/src/ProofOfExistence.sol) exposes two core methods:
 
-| 方法 | 类型 | 说明 |
-|------|------|------|
-| `register(bytes32 fileHash, string uri)` | 写入 | 将文件哈希注册到链上 |
-| `verify(bytes32 fileHash)` | 只读 | 查询文件的注册信息 |
+| Method | Type | Description |
+|--------|------|-------------|
+| `register(bytes32 fileHash, string uri)` | Write | Register a file hash on-chain |
+| `verify(bytes32 fileHash)` | Read | Query registration info for a file hash |
 
-### 合约部署 (Foundry)
+### Deploy with Foundry
 
 ```bash
 cd contracts
 cp .env.example .env
-# 编辑 .env
+# Edit .env
 
 source .env
 forge script --broadcast --rpc-url $SEPOLIA_RPC_URL \
@@ -159,23 +162,24 @@ forge script --broadcast --rpc-url $SEPOLIA_RPC_URL \
   script/Deploy.s.sol
 ```
 
-## 🔒 安全注意事项
+## Security
 
-> **⚠️ 重要：** 本项目中的 `.env` 文件包含敏感信息，已被 `.gitignore` 忽略。
+> **⚠️ Important:** The `.env` files contain sensitive information and are excluded
+> from version control via `.gitignore`.
 
-- **绝不提交** 真实私钥 (`PRIVATE_KEY`) 到 Git
-- **绝不提交** 包含 API Key 的 RPC URL
-- 使用 `.env.example` 作为模板，在本地创建 `.env`
-- 建议使用专用的测试钱包，与主钱包隔离
+- **Never commit** a real private key (`PRIVATE_KEY`) to Git
+- **Never commit** an RPC URL containing an API Key
+- Use `.env.example` as a template and create `.env` locally
+- Use a dedicated test wallet isolated from your main wallet
 
-## 📚 适用场景
+## Use Cases
 
-- 🎓 区块链技术学习
-- 📖 Solidity + Python 工程案例
-- 🔐 Proof of Existence 存证原型
-- 👨‍🏫 教学演示
-- 📝 技术博客配套代码
+- 🎓 Blockchain technology learning
+- 📖 Solidity + Python engineering reference
+- 🔐 Proof-of-Existence prototype
+- 👨‍🏫 Teaching and demonstration
+- 📝 Technical blog companion code
 
-## 📄 License
+## License
 
-MIT License — 仅供学习使用。
+MIT License — for educational use only.

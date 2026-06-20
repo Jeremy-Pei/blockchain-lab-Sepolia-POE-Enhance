@@ -1,7 +1,7 @@
 """
-verify_file.py — 验证文件是否已链上注册
+verify_file.py — Verify whether a file has been registered on-chain
 
-完整流程：计算哈希 → 调用合约 verify → 比对本地证据。
+Full flow: compute hash → call contract verify → compare with local evidence.
 """
 
 import sys
@@ -15,33 +15,33 @@ from proof_client.evidence_store import load_evidence
 
 def verify_file(file_path: str) -> dict:
     """
-    验证文件是否已在链上注册。
+    Verify whether a file has been registered on the blockchain.
 
     Args:
-        file_path: 文件路径。
+        file_path: Path to the file.
 
     Returns:
-        包含验证结果的字典：
-        - registered: 是否已注册
-        - file_hash: 文件哈希
-        - chain_data: 链上数据 (owner, timestamp, uri)
-        - local_evidence: 本地证据记录（如果有）
+        Dict with verification results:
+        - registered: whether the file is registered
+        - file_hash: computed file hash
+        - chain_data: on-chain data (owner, timestamp, uri)
+        - local_evidence: local evidence record if found
     """
     path = Path(file_path)
     if not path.exists():
-        raise FileNotFoundError(f"文件不存在: {path}")
+        raise FileNotFoundError(f"File not found: {path}")
 
-    # 1) 计算当前文件哈希
+    # 1) Compute current file hash
     file_hash = sha256_hash(path)
-    print(f"📄 文件: {path.name}")
+    print(f"📄 File:    {path.name}")
     print(f"🔑 SHA-256: {file_hash}")
 
-    # 2) 查询链上记录
-    print("🔍 查询链上记录...")
+    # 2) Query on-chain record
+    print("🔍 Querying on-chain record...")
     chain_data = verify_hash(file_hash)
 
     if not chain_data["registered"]:
-        print("❌ 该文件哈希尚未在链上注册。")
+        print("❌ This file hash has not been registered on-chain.")
         return {
             "registered": False,
             "file_hash": file_hash,
@@ -49,23 +49,23 @@ def verify_file(file_path: str) -> dict:
             "local_evidence": None,
         }
 
-    # 3) 显示链上信息
+    # 3) Display on-chain information
     ts = chain_data["timestamp"]
     ts_str = datetime.fromtimestamp(ts, tz=timezone.utc).strftime(
         "%Y-%m-%d %H:%M:%S UTC"
     )
 
-    print("✅ 文件已在链上注册!")
+    print("✅ File is registered on-chain!")
     print(f"   Owner:     {chain_data['owner']}")
     print(f"   Timestamp: {ts} ({ts_str})")
     print(f"   URI:       {chain_data['uri']}")
 
-    # 4) 尝试加载本地证据
+    # 4) Try to load local evidence
     local = load_evidence(file_hash)
     if local:
-        print(f"📋 本地证据记录: 已找到 (Tx: 0x{local.tx_hash[:16]}...)")
+        print(f"📋 Local evidence: found (Tx: 0x{local.tx_hash[:16]}...)")
     else:
-        print("📋 本地证据记录: 未找到")
+        print("📋 Local evidence: not found")
 
     return {
         "registered": True,
@@ -75,10 +75,10 @@ def verify_file(file_path: str) -> dict:
     }
 
 
-# ── CLI 入口 ──────────────────────────────────────────────────────
+# ── CLI entry point ───────────────────────────────────────────────
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("用法: python -m proof_client.verify_file <文件路径>")
+        print("Usage: python -m proof_client.verify_file <file_path>")
         sys.exit(1)
 
     verify_file(sys.argv[1])

@@ -13,7 +13,7 @@
 - **Transaction hash:** `0xc4b67c5358f8a633d7983744fd50cb89ce18e146c08a2ad8eada762dc1203f36`
 - **Block number:** `3`
 - **Owner address:** `0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266`
-- **Timestamp:** `1778997403` (UTC时间戳, 对应北京时间 2026-05-17 13:56:43)
+- **Timestamp:** `1778997403` (UTC: 2026-05-17 13:56:43)
 
 ## Verification Method
 

@@ -1,8 +1,8 @@
 """
-evidence_schema.py — 证据数据结构定义
+evidence_schema.py — Evidence data structure definition
 
-使用 dataclass 定义链上证据的标准化数据结构，
-用于在模块间传递和序列化证据信息。
+Defines the standardised EvidenceRecord dataclass used for passing
+and serialising on-chain proof data between modules.
 """
 
 from dataclasses import dataclass, field, asdict
@@ -12,14 +12,14 @@ from typing import Optional
 
 @dataclass
 class EvidenceRecord:
-    """一条链上存证记录。"""
+    """A single on-chain proof-of-existence record."""
 
-    # ── 文件信息 ──
+    # ── File information ──
     file_name: str
     file_hash: str
     uri: str
 
-    # ── 区块链信息 ──
+    # ── Blockchain information ──
     tx_hash: str = ""
     block_number: int = 0
     gas_used: int = 0
@@ -27,7 +27,7 @@ class EvidenceRecord:
     timestamp: int = 0
     status: str = ""
 
-    # ── 元数据 ──
+    # ── Metadata ──
     network: str = "Ethereum Sepolia"
     chain_id: int = 11155111
     contract_address: str = ""
@@ -36,27 +36,27 @@ class EvidenceRecord:
         default_factory=lambda: datetime.now(timezone.utc).isoformat()
     )
 
-    # ── 可选备注 ──
+    # ── Optional notes ──
     note: Optional[str] = None
 
-    # ── 序列化 ──
+    # ── Serialisation ──
 
     def to_dict(self) -> dict:
-        """转为字典，用于 JSON 序列化。"""
+        """Convert to a dict suitable for JSON serialisation."""
         return asdict(self)
 
     @classmethod
     def from_dict(cls, data: dict) -> "EvidenceRecord":
-        """从字典创建 EvidenceRecord，自动过滤无效键。"""
+        """Create an EvidenceRecord from a dict, filtering unknown keys."""
         valid_keys = {f.name for f in cls.__dataclass_fields__.values()}
         filtered = {k: v for k, v in data.items() if k in valid_keys}
         return cls(**filtered)
 
-    # ── 便利属性 ──
+    # ── Convenience properties ──
 
     @property
     def timestamp_utc(self) -> str:
-        """将 Unix 时间戳转为 UTC 可读字符串。"""
+        """Convert the Unix timestamp to a human-readable UTC string."""
         if self.timestamp == 0:
             return "N/A"
         return datetime.fromtimestamp(
@@ -65,7 +65,7 @@ class EvidenceRecord:
 
     @property
     def explorer_link(self) -> str:
-        """完整的区块浏览器交易链接。"""
+        """Full block explorer transaction link."""
         if not self.explorer_tx_url or not self.tx_hash:
             return ""
         tx = self.tx_hash if self.tx_hash.startswith("0x") else f"0x{self.tx_hash}"

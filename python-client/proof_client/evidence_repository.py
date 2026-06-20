@@ -1,10 +1,10 @@
 """
-evidence_repository.py — SQLite 证据仓库
+evidence_repository.py — SQLite evidence repository
 
-使用 SQLite 数据库持久化存储证据记录，支持高效查询和统计。
-与 evidence_store.py (JSON 文件) 互补：
-  - JSON 文件：用于导出、分享和人类可读
-  - SQLite 数据库：用于高效查询、统计和批量操作
+Persists evidence records in a SQLite database for efficient querying
+and statistics. Complements evidence_store.py (JSON files):
+  - JSON files: for export, sharing, and human readability
+  - SQLite database: for efficient querying, statistics, and batch ops
 """
 
 import sqlite3
@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS evidence (
 
 
 def _get_conn(db_path: Path | None = None) -> sqlite3.Connection:
-    """获取数据库连接并确保表存在。"""
+    """Open a database connection and ensure the table exists."""
     conn = sqlite3.connect(str(db_path or DB_PATH))
     conn.row_factory = sqlite3.Row
     conn.execute(_CREATE_TABLE_SQL)
@@ -47,13 +47,13 @@ def _get_conn(db_path: Path | None = None) -> sqlite3.Connection:
 
 def insert(record: EvidenceRecord) -> int:
     """
-    插入一条证据记录。
+    Insert an evidence record.
 
     Args:
-        record: EvidenceRecord 实例。
+        record: EvidenceRecord instance.
 
     Returns:
-        插入行的 rowid。
+        Row ID of the inserted row.
     """
     conn = _get_conn()
     d = record.to_dict()
@@ -72,7 +72,7 @@ def insert(record: EvidenceRecord) -> int:
 
 
 def find_by_hash(file_hash: str) -> EvidenceRecord | None:
-    """根据文件哈希查找证据记录。"""
+    """Find an evidence record by file hash."""
     conn = _get_conn()
     try:
         row = conn.execute(
@@ -86,7 +86,7 @@ def find_by_hash(file_hash: str) -> EvidenceRecord | None:
 
 
 def find_all() -> list[EvidenceRecord]:
-    """查询所有证据记录，按 id 降序排列。"""
+    """Return all evidence records ordered by id descending."""
     conn = _get_conn()
     try:
         rows = conn.execute(
@@ -98,7 +98,7 @@ def find_all() -> list[EvidenceRecord]:
 
 
 def count() -> int:
-    """返回证据记录总数。"""
+    """Return the total number of evidence records."""
     conn = _get_conn()
     try:
         return conn.execute("SELECT COUNT(*) FROM evidence").fetchone()[0]
@@ -107,7 +107,7 @@ def count() -> int:
 
 
 def find_by_owner(owner: str) -> list[EvidenceRecord]:
-    """根据 owner 地址查找证据记录。"""
+    """Find evidence records by owner address."""
     conn = _get_conn()
     try:
         rows = conn.execute(
