@@ -17,10 +17,11 @@ ABI_DIR = PROJECT_ROOT / "abi"
 WORKS_DIR = PROJECT_ROOT / "works"
 EVIDENCE_DIR = PROJECT_ROOT / "evidence"
 REPORTS_DIR = PROJECT_ROOT / "reports"
+PACKAGES_DIR = PROJECT_ROOT / "packages"
 DB_PATH = PROJECT_ROOT / "evidence.db"
 
 # Ensure required directories exist
-for d in (WORKS_DIR, EVIDENCE_DIR, REPORTS_DIR):
+for d in (WORKS_DIR, EVIDENCE_DIR, REPORTS_DIR, PACKAGES_DIR):
     d.mkdir(parents=True, exist_ok=True)
 
 # ── Blockchain configuration ──────────────────────────────────────

@@ -136,6 +136,9 @@ export PYTHONPATH=.
 # Local tests only (no on-chain calls, 49 test cases)
 python -m proof_client.test_all
 
+# Stage 6: PDF, ZIP package, manifest, verification guide (90+ test cases)
+python -m proof_client.test_stage6
+
 # Include on-chain tests (requires Sepolia ETH, consumes gas)
 python -m proof_client.test_all --chain
 ```

@@ -106,6 +106,20 @@ def count() -> int:
         conn.close()
 
 
+def find_by_id(row_id: int) -> EvidenceRecord | None:
+    """Find an evidence record by its auto-increment row id."""
+    conn = _get_conn()
+    try:
+        row = conn.execute(
+            "SELECT * FROM evidence WHERE id = ?", (row_id,)
+        ).fetchone()
+        if row is None:
+            return None
+        return EvidenceRecord.from_dict(dict(row))
+    finally:
+        conn.close()
+
+
 def find_by_owner(owner: str) -> list[EvidenceRecord]:
     """Find evidence records by owner address."""
     conn = _get_conn()
