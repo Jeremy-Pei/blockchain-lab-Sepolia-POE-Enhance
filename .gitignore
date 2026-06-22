@@ -33,8 +33,11 @@ venv/
 python-client/evidence/*.json
 python-client/reports/*.md
 python-client/reports/*.pdf
+python-client/packages/*.zip
+python-client/packages/evidence_package_*/
 !python-client/evidence/.gitkeep
 !python-client/reports/.gitkeep
+!python-client/packages/.gitkeep
 
 # ══════════════════════════════════════════════════════════
 # Works: keep only sample files

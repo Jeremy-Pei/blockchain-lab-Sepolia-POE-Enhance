@@ -49,11 +49,20 @@ blockchain-lab-Sepolia-POE-Enhance/
 │   │   ├── batch_register.py   #   Batch registration
 │   │   ├── generate_report.py  #   Markdown proof report generator
 │   │   ├── query_evidence.py   #   Query evidence records
-│   │   └── test_all.py         #   Full module test suite
+│   │   ├── report_template.py  #   Stage 6: shared certificate content
+│   │   ├── pdf_report.py       #   Stage 6: PDF certificate generator
+│   │   ├── manifest.py         #   Stage 6: SHA-256 manifest + integrity check
+│   │   ├── verification_guide.py   # Stage 6: third-party verification guide
+│   │   ├── package_exporter.py #   Stage 6: assemble evidence package + ZIP
+│   │   ├── export_package.py   #   Stage 6: CLI to export packages
+│   │   ├── verify_package.py   #   Stage 6: CLI to verify package integrity
+│   │   ├── test_all.py         #   Full module test suite
+│   │   └── test_stage6.py      #   Stage 6 test suite
 │   ├── abi/ProofOfExistence.json
 │   ├── works/                  #   Files to register
 │   ├── evidence/               #   Generated evidence JSON files
 │   ├── reports/                #   Generated proof reports
+│   ├── packages/               #   Generated evidence packages (ZIP)
 │   ├── .env.example
 │   └── requirements.txt
 │
@@ -142,6 +151,41 @@ python -m proof_client.test_stage6
 # Include on-chain tests (requires Sepolia ETH, consumes gas)
 python -m proof_client.test_all --chain
 ```
+
+## Evidence Package (Stage 6)
+
+Stage 6 turns a raw on-chain registration into a **self-contained, independently
+verifiable evidence package** — a single ZIP that a third party can check without
+trusting (or even running) this software.
+
+```bash
+cd python-client
+export PYTHONPATH=.
+
+# Export a verifiable evidence package (ZIP) for one registration
+python -m proof_client.export_package --hash <file_hash>
+python -m proof_client.export_package --id   <row_id>
+python -m proof_client.export_package --all
+
+# Verify a package's integrity (works on a .zip or an extracted folder)
+python -m proof_client.verify_package packages/evidence_package_<date>_<short>.zip
+```
+
+Each package contains the original file, a machine-readable evidence JSON, Markdown +
+PDF certificates, a step-by-step third-party verification guide, and a `manifest.json`
+of SHA-256 checksums that makes any post-generation tampering detectable:
+
+```
+evidence_package_<date>_<short>/
+├── original/        # copy of the registered work file
+├── evidence/        # machine-readable on-chain evidence record (JSON)
+├── reports/         # human-readable certificate (Markdown + PDF)
+├── verification/    # third-party verification guide + copy-paste commands
+├── manifest.json    # SHA-256 checksum of every file in the package
+└── README.md        # package overview + quick verification steps
+```
+
+📄 Full design and verification model: [docs/stage6_evidence_package_system.md](docs/stage6_evidence_package_system.md)
 
 ## Smart Contract
 
