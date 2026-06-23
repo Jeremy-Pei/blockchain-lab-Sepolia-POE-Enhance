@@ -56,8 +56,13 @@ blockchain-lab-Sepolia-POE-Enhance/
 │   │   ├── package_exporter.py #   Stage 6: assemble evidence package + ZIP
 │   │   ├── export_package.py   #   Stage 6: CLI to export packages
 │   │   ├── verify_package.py   #   Stage 6: CLI to verify package integrity
+│   │   ├── ipfs_client.py      #   Stage 7: IPFS clients (mock + Pinata) + helpers
+│   │   ├── ipfs_upload.py      #   Stage 7: CLI to upload a file to IPFS
+│   │   ├── ipfs_download.py    #   Stage 7: CLI to download a file by CID
+│   │   ├── verify_ipfs.py      #   Stage 7: CLI to verify IPFS content vs hash
 │   │   ├── test_all.py         #   Full module test suite
-│   │   └── test_stage6.py      #   Stage 6 test suite
+│   │   ├── test_stage6.py      #   Stage 6 test suite
+│   │   └── test_stage7.py      #   Stage 7 test suite (IPFS)
 │   ├── abi/ProofOfExistence.json
 │   ├── works/                  #   Files to register
 │   ├── evidence/               #   Generated evidence JSON files
@@ -145,12 +150,21 @@ export PYTHONPATH=.
 # Local tests only (no on-chain calls, 49 test cases)
 python -m proof_client.test_all
 
-# Stage 6: PDF, ZIP package, manifest, verification guide (90+ test cases)
+# Stage 6: PDF, ZIP package, manifest, verification guide (90 test cases)
 python -m proof_client.test_stage6
+
+# Stage 7: IPFS upload/download, CID, verify_ipfs, package metadata (79 test cases)
+python -m proof_client.test_stage7
 
 # Include on-chain tests (requires Sepolia ETH, consumes gas)
 python -m proof_client.test_all --chain
 ```
+
+| Suite | Tests |
+|-------|-------|
+| Core (`test_all`) | 49 |
+| Stage 6 (`test_stage6`) | 90 |
+| Stage 7 (`test_stage7`) | 79 |
 
 ## Evidence Package (Stage 6)
 
@@ -186,6 +200,45 @@ evidence_package_<date>_<short>/
 ```
 
 📄 Full design and verification model: [docs/stage6_evidence_package_system.md](docs/stage6_evidence_package_system.md)
+
+## IPFS Integration (Stage 7)
+
+Stage 7 adds an **off-chain, content-addressed storage layer**. The file (or an
+encrypted copy) is uploaded to IPFS, and the resulting `ipfs://<CID>` becomes the
+on-chain `uri` — so a third party can re-obtain the original bytes, not just the
+hash. **The smart contract is unchanged**; its `uri` field was always meant for an
+off-chain pointer.
+
+```bash
+cd python-client
+export PYTHONPATH=.
+
+# Upload a file to IPFS (prints CID, ipfs:// URI, gateway URL, SHA-256)
+python -m proof_client.ipfs_upload works/sample_work.txt
+
+# Register on-chain AND pin to IPFS in one step (uri becomes ipfs://<CID>)
+python -m proof_client.register_file works/sample_work.txt --upload-ipfs
+
+# Download a file from IPFS by CID
+python -m proof_client.ipfs_download <CID> -o downloads/sample_work.txt
+
+# Verify IPFS content against the registered hash
+python -m proof_client.verify_ipfs --cid <CID> --expected-hash 0x<hash>
+python -m proof_client.verify_ipfs --hash 0x<file_hash>
+```
+
+A provider is selected by `IPFS_PROVIDER` (default `mock`, a local network-free
+content store ideal for tests; `pinata` uses the Pinata pinning service and needs
+`PINATA_JWT`). When a record has a CID, evidence packages gain an `ipfs/` folder
+(`ipfs_metadata.json` + `ipfs_gateway_links.txt`), the certificate gains an
+**Off-Chain Storage (IPFS)** section, and the verification guide gains
+**Step 4 — Verify the IPFS Content**.
+
+> ⚠️ **Privacy:** Do not upload private or sensitive files to public IPFS without
+> encryption. For sensitive works, upload an *encrypted copy* rather than the raw
+> original. The SHA-256 hash — not the CID — remains the primary evidence hash.
+
+📄 Full design, workflow, and privacy notes: [docs/stage7_ipfs_integration.md](docs/stage7_ipfs_integration.md)
 
 ## Smart Contract
 
