@@ -11,6 +11,52 @@ from pathlib import Path
 from proof_client.evidence_schema import EvidenceRecord
 
 
+def _ipfs_section(record: EvidenceRecord) -> str:
+    """Return the Step 4 IPFS verification section (Markdown)."""
+    if not record.has_ipfs:
+        return """## Step 4 — Verify the IPFS Content
+
+No IPFS content identifier (CID) was recorded for this file, so this step is
+not applicable. The proof above relies on the on-chain hash and the local
+evidence package only.
+
+---
+"""
+
+    gw = record.ipfs_gateway_url or f"https://ipfs.io/ipfs/{record.ipfs_cid}"
+    return f"""## Step 4 — Verify the IPFS Content
+
+A copy of the file is stored on IPFS under a content identifier (CID).
+Download it from any gateway, recompute its SHA-256, and confirm it matches
+the fingerprint registered on-chain.
+
+- **IPFS CID:** `{record.ipfs_cid}`
+- **IPFS URI:** `{record.ipfs_uri}`
+- **Gateway URL:** {gw}
+- **Provider:** {record.ipfs_provider or 'N/A'}
+
+```bash
+# Download the file from the IPFS gateway
+curl -L "{gw}" -o ipfs_downloaded_file
+
+# Recompute its SHA-256 and compare with the registered hash
+shasum -a 256 ipfs_downloaded_file
+# Expected: {record.file_hash}
+```
+
+Or use this client:
+```bash
+python -m proof_client.verify_ipfs --cid {record.ipfs_cid} --expected-hash {record.file_hash}
+```
+
+> **Note:** The SHA-256 hash proves the file version in this system. The IPFS
+> CID identifies the content in the IPFS network. They are related but not
+> identical — the SHA-256 remains the primary evidence hash.
+
+---
+"""
+
+
 def build_verification_guide(record: EvidenceRecord) -> str:
     """Return the full text of the verification guide (Markdown)."""
     tx = record.tx_hash
@@ -121,6 +167,7 @@ Or manually check SHA-256 of each file against `manifest.json`.
 
 ---
 
+{_ipfs_section(record)}
 ## What This Proves
 
 If all checks pass:
@@ -145,6 +192,18 @@ def build_verification_commands(record: EvidenceRecord) -> str:
     tx = record.tx_hash
     if tx and not tx.startswith("0x"):
         tx = f"0x{tx}"
+
+    if record.has_ipfs:
+        gw = record.ipfs_gateway_url or f"https://ipfs.io/ipfs/{record.ipfs_cid}"
+        ipfs_block = f"""
+# 6. Verify the IPFS content (CID: {record.ipfs_cid})
+curl -L "{gw}" -o ipfs_downloaded_file
+shasum -a 256 ipfs_downloaded_file
+# Expected: {record.file_hash}
+python -m proof_client.verify_ipfs --cid {record.ipfs_cid} --expected-hash {record.file_hash}
+"""
+    else:
+        ipfs_block = "\n# 6. IPFS verification: no CID recorded for this file.\n"
 
     return f"""# Verification Commands
 # File: {record.file_name}
@@ -173,6 +232,7 @@ python -m proof_client.verify_package <path_to_package.zip>
 
 # 5. View transaction on block explorer
 # {record.explorer_link or 'N/A'}
+{ipfs_block}
 
 # Contract: {record.contract_address}
 # Transaction: {tx}

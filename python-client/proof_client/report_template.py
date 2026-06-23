@@ -60,6 +60,13 @@ def build_certificate_data(record: EvidenceRecord, manifest_hash: str = "") -> d
         "block_number": record.block_number,
         "block_timestamp": record.timestamp_utc,
         "explorer_url": record.explorer_link or "N/A",
+        # ── Off-Chain Storage (IPFS, Stage 7) ────────────────────────
+        "has_ipfs": record.has_ipfs,
+        "ipfs_cid": record.ipfs_cid or "Not available",
+        "ipfs_uri": record.ipfs_uri or "Not available",
+        "ipfs_gateway_url": record.ipfs_gateway_url or "Not available",
+        "ipfs_provider": record.ipfs_provider or "Not available",
+        "ipfs_uploaded_at": record.ipfs_uploaded_at or "Not available",
         # ── Local Evidence ───────────────────────────────────────────
         "evidence_filename": f"evidence_{short}.json",
         "package_manifest_hash": manifest_hash or "N/A",
@@ -125,7 +132,23 @@ shasum -a 256 "{d['file_name']}"
 
 ---
 
-## 5. Local Evidence Record
+## 5. Off-Chain Storage (IPFS)
+
+The SHA-256 hash above proves *which file version* was registered. The IPFS
+CID below identifies a *retrievable copy of the content* in the IPFS network.
+They are derived from the same bytes but are not the same identifier.
+
+| Field | Value |
+|-------|-------|
+| **IPFS CID** | `{d['ipfs_cid']}` |
+| **IPFS URI** | `{d['ipfs_uri']}` |
+| **Gateway URL** | {d['ipfs_gateway_url']} |
+| **Provider** | {d['ipfs_provider']} |
+| **Uploaded at (UTC)** | {d['ipfs_uploaded_at']} |
+
+---
+
+## 6. Local Evidence Record
 
 | Field | Value |
 |-------|-------|
@@ -134,7 +157,7 @@ shasum -a 256 "{d['file_name']}"
 
 ---
 
-## 6. Verification Method
+## 7. Verification Method
 
 **Step 1 — Verify the file fingerprint**
 
@@ -156,15 +179,23 @@ Call `verify(fileHash)` on the smart contract:
 python -m proof_client.verify_package <path_to_package.zip>
 ```
 
+**Step 4 — Verify the IPFS content (if a CID is present)**
+
+```bash
+python -m proof_client.verify_ipfs --hash {d['file_hash']}
+```
+This downloads the file from IPFS, recomputes its SHA-256, and confirms it
+matches the fingerprint above.
+
 ---
 
-## 7. Limitations
+## 8. Limitations
 
 > {d['limitations']}
 
 ---
 
-## 8. Declaration
+## 9. Declaration
 
 {d['declaration']}
 

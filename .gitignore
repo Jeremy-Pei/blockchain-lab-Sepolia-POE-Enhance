@@ -40,6 +40,12 @@ python-client/packages/evidence_package_*/
 !python-client/packages/.gitkeep
 
 # ══════════════════════════════════════════════════════════
+# IPFS mock storage and downloads (Stage 7)
+# ══════════════════════════════════════════════════════════
+python-client/mock_ipfs_storage/
+python-client/downloads/
+
+# ══════════════════════════════════════════════════════════
 # Works: keep only sample files
 # ══════════════════════════════════════════════════════════
 python-client/works/*

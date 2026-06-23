@@ -20,8 +20,11 @@ REPORTS_DIR = PROJECT_ROOT / "reports"
 PACKAGES_DIR = PROJECT_ROOT / "packages"
 DB_PATH = PROJECT_ROOT / "evidence.db"
 
+# Stage 7: local content store used by the mock IPFS client
+MOCK_IPFS_DIR = PROJECT_ROOT / "mock_ipfs_storage"
+
 # Ensure required directories exist
-for d in (WORKS_DIR, EVIDENCE_DIR, REPORTS_DIR, PACKAGES_DIR):
+for d in (WORKS_DIR, EVIDENCE_DIR, REPORTS_DIR, PACKAGES_DIR, MOCK_IPFS_DIR):
     d.mkdir(parents=True, exist_ok=True)
 
 # ── Blockchain configuration ──────────────────────────────────────
@@ -30,6 +33,15 @@ PRIVATE_KEY = os.getenv("PRIVATE_KEY", "")
 CONTRACT_ADDRESS = os.getenv("CONTRACT_ADDRESS", "")
 CHAIN_ID = int(os.getenv("CHAIN_ID", "11155111"))
 EXPLORER_TX_URL = os.getenv("EXPLORER_TX_URL", "https://sepolia.etherscan.io/tx/")
+
+# ── IPFS configuration (Stage 7) ──────────────────────────────────
+# Provider selects which off-chain storage backend is used:
+#   mock   → local content store (no network, default; ideal for tests)
+#   pinata → Pinata pinning service (requires PINATA_JWT)
+IPFS_PROVIDER = os.getenv("IPFS_PROVIDER", "mock")
+IPFS_GATEWAY_URL = os.getenv("IPFS_GATEWAY_URL", "https://ipfs.io/ipfs/")
+PINATA_JWT = os.getenv("PINATA_JWT", "")
+PINATA_API_URL = os.getenv("PINATA_API_URL", "https://api.pinata.cloud")
 
 # ── Load ABI ──────────────────────────────────────────────────────
 ABI_PATH = ABI_DIR / "ProofOfExistence.json"

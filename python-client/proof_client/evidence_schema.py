@@ -36,6 +36,19 @@ class EvidenceRecord:
         default_factory=lambda: datetime.now(timezone.utc).isoformat()
     )
 
+    # ── IPFS off-chain storage (Stage 7) ──
+    # Optional and defaulted, so older evidence JSON without these keys
+    # still deserialises cleanly via from_dict().
+    #
+    # NOTE: file_hash (SHA-256) is still the PRIMARY evidence hash. The CID
+    # below is only an off-chain pointer to a retrievable copy of the file.
+    ipfs_cid: str = ""           # content identifier, e.g. bafy... / mock-...
+    ipfs_uri: str = ""           # canonical URI, e.g. ipfs://bafy...
+    ipfs_gateway_url: str = ""   # browsable HTTP gateway URL
+    ipfs_provider: str = ""      # mock-ipfs / pinata / local-ipfs
+    ipfs_uploaded_at: str = ""   # UTC timestamp of the IPFS upload
+    ipfs_sha256: str = ""        # SHA-256 of the uploaded content (== file_hash)
+
     # ── Optional notes ──
     note: Optional[str] = None
 
@@ -62,6 +75,11 @@ class EvidenceRecord:
         return datetime.fromtimestamp(
             self.timestamp, tz=timezone.utc
         ).strftime("%Y-%m-%d %H:%M:%S UTC")
+
+    @property
+    def has_ipfs(self) -> bool:
+        """True if this record carries an IPFS content identifier."""
+        return bool(self.ipfs_cid)
 
     @property
     def explorer_link(self) -> str:

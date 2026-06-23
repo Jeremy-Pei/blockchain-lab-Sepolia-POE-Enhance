@@ -173,15 +173,31 @@ def _build_story(record: EvidenceRecord, manifest_hash: str = "") -> list:
         ("Explorer URL",     d["explorer_url"]),
     ]))
 
-    # ── Section 5: Local Evidence Record ─────────────────────────
-    story.append(Paragraph("5. Local Evidence Record", s["section"]))
+    # ── Section 5: Off-Chain Storage (IPFS) ──────────────────────
+    story.append(Paragraph("5. Off-Chain Storage (IPFS)", s["section"]))
+    story.append(Paragraph(
+        "The SHA-256 hash proves <i>which file version</i> was registered; the "
+        "IPFS CID identifies a <i>retrievable copy</i> of the content. They are "
+        "derived from the same bytes but are not the same identifier.",
+        s["body"],
+    ))
+    story.append(_kv_table([
+        ("IPFS CID",        d["ipfs_cid"]),
+        ("IPFS URI",        d["ipfs_uri"]),
+        ("Gateway URL",     d["ipfs_gateway_url"]),
+        ("Provider",        d["ipfs_provider"]),
+        ("Uploaded at UTC", d["ipfs_uploaded_at"]),
+    ]))
+
+    # ── Section 6: Local Evidence Record ─────────────────────────
+    story.append(Paragraph("6. Local Evidence Record", s["section"]))
     story.append(_kv_table([
         ("Evidence JSON filename", d["evidence_filename"]),
         ("Package manifest hash",  d["package_manifest_hash"]),
     ]))
 
-    # ── Section 6: Verification Method ───────────────────────────
-    story.append(Paragraph("6. Verification Method", s["section"]))
+    # ── Section 7: Verification Method ───────────────────────────
+    story.append(Paragraph("7. Verification Method", s["section"]))
     story.append(Paragraph(
         "<b>Step 1</b> — Recompute the SHA-256 hash of the original file and "
         "confirm it matches the fingerprint above.",
@@ -199,13 +215,19 @@ def _build_story(record: EvidenceRecord, manifest_hash: str = "") -> list:
         "to confirm the evidence package has not been tampered with.",
         s["body"],
     ))
+    story.append(Paragraph(
+        "<b>Step 4</b> — If an IPFS CID is present, run "
+        "<font face='Courier'>python -m proof_client.verify_ipfs --hash &lt;file_hash&gt;</font> "
+        "to download the content from IPFS and confirm its SHA-256 matches.",
+        s["body"],
+    ))
 
-    # ── Section 7: Limitations ───────────────────────────────────
-    story.append(Paragraph("7. Limitations", s["section"]))
+    # ── Section 8: Limitations ───────────────────────────────────
+    story.append(Paragraph("8. Limitations", s["section"]))
     story.append(Paragraph(LIMITATIONS_TEXT, s["warning"]))
 
-    # ── Section 8: Declaration ───────────────────────────────────
-    story.append(Paragraph("8. Declaration", s["section"]))
+    # ── Section 9: Declaration ───────────────────────────────────
+    story.append(Paragraph("9. Declaration", s["section"]))
     story.append(Paragraph(d["declaration"], s["body"]))
 
     story.append(Spacer(1, 6 * mm))

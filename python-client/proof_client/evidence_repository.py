@@ -31,9 +31,33 @@ CREATE TABLE IF NOT EXISTS evidence (
     contract_address TEXT    DEFAULT '',
     explorer_tx_url  TEXT    DEFAULT '',
     created_at       TEXT    NOT NULL,
+    ipfs_cid         TEXT    DEFAULT '',
+    ipfs_uri         TEXT    DEFAULT '',
+    ipfs_gateway_url TEXT    DEFAULT '',
+    ipfs_provider    TEXT    DEFAULT '',
+    ipfs_uploaded_at TEXT    DEFAULT '',
+    ipfs_sha256      TEXT    DEFAULT '',
     note             TEXT
 )
 """
+
+# Columns added after the initial schema; migrated in on existing databases.
+_IPFS_COLUMNS = (
+    "ipfs_cid",
+    "ipfs_uri",
+    "ipfs_gateway_url",
+    "ipfs_provider",
+    "ipfs_uploaded_at",
+    "ipfs_sha256",
+)
+
+
+def _migrate(conn: sqlite3.Connection) -> None:
+    """Add any IPFS columns missing from a pre-Stage-7 database."""
+    existing = {row["name"] for row in conn.execute("PRAGMA table_info(evidence)")}
+    for col in _IPFS_COLUMNS:
+        if col not in existing:
+            conn.execute(f"ALTER TABLE evidence ADD COLUMN {col} TEXT DEFAULT ''")
 
 
 def _get_conn(db_path: Path | None = None) -> sqlite3.Connection:
@@ -41,6 +65,7 @@ def _get_conn(db_path: Path | None = None) -> sqlite3.Connection:
     conn = sqlite3.connect(str(db_path or DB_PATH))
     conn.row_factory = sqlite3.Row
     conn.execute(_CREATE_TABLE_SQL)
+    _migrate(conn)
     conn.commit()
     return conn
 
