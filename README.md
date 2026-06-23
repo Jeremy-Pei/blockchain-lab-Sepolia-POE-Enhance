@@ -203,6 +203,8 @@ evidence_package_<date>_<short>/
 
 ## IPFS Integration (Stage 7)
 
+> 🏷️ Release: [**v0.7.0 — IPFS Integration for Off-Chain Content-Addressed Storage**](https://github.com/Jeremy-Pei/blockchain-lab-Sepolia-POE-Enhance/releases/tag/v0.7.0)
+
 Stage 7 adds an **off-chain, content-addressed storage layer**. The file (or an
 encrypted copy) is uploaded to IPFS, and the resulting `ipfs://<CID>` becomes the
 on-chain `uri` — so a third party can re-obtain the original bytes, not just the
