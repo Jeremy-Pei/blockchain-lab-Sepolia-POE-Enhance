@@ -47,7 +47,34 @@ class EvidenceRecord:
     ipfs_gateway_url: str = ""   # browsable HTTP gateway URL
     ipfs_provider: str = ""      # mock-ipfs / pinata / local-ipfs
     ipfs_uploaded_at: str = ""   # UTC timestamp of the IPFS upload
-    ipfs_sha256: str = ""        # SHA-256 of the uploaded content (== file_hash)
+    ipfs_sha256: str = ""        # SHA-256 of the uploaded content
+
+    # ── Encrypted off-chain storage (Stage 8) ──
+    # Optional and defaulted so older evidence JSON without these keys still
+    # deserialises cleanly. When is_encrypted is True the file was encrypted
+    # locally and only the CIPHERTEXT was uploaded to IPFS.
+    #
+    # INVARIANTS:
+    #   file_hash            → SHA-256 of the ORIGINAL plaintext (primary hash,
+    #                          and what is registered on-chain).
+    #   encrypted_file_hash  → SHA-256 of the ciphertext (identifies the blob
+    #                          stored on IPFS; never replaces file_hash).
+    #   ipfs_uri / encrypted_ipfs_uri → ipfs://<cid> of the ciphertext, which
+    #                          becomes the on-chain `uri`.
+    # The password and key are NEVER stored here (only public salt/nonce/kdf).
+    is_encrypted: bool = False
+    encryption_algorithm: str = ""
+    encryption_kdf: str = ""
+    encryption_kdf_iterations: int = 0
+    encryption_salt_hex: str = ""
+    encryption_nonce_hex: str = ""
+    encrypted_file_hash: str = ""
+    encrypted_file_name: str = ""
+    encrypted_ipfs_cid: str = ""
+    encrypted_ipfs_uri: str = ""
+    encrypted_ipfs_gateway_url: str = ""
+    encrypted_ipfs_provider: str = ""
+    encrypted_ipfs_uploaded_at: str = ""
 
     # ── Optional notes ──
     note: Optional[str] = None
@@ -80,6 +107,11 @@ class EvidenceRecord:
     def has_ipfs(self) -> bool:
         """True if this record carries an IPFS content identifier."""
         return bool(self.ipfs_cid)
+
+    @property
+    def has_encrypted_ipfs(self) -> bool:
+        """True if this record stores an encrypted copy on IPFS."""
+        return bool(self.is_encrypted and self.encrypted_ipfs_cid)
 
     @property
     def explorer_link(self) -> str:

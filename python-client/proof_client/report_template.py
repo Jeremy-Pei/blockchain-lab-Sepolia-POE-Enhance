@@ -67,6 +67,22 @@ def build_certificate_data(record: EvidenceRecord, manifest_hash: str = "") -> d
         "ipfs_gateway_url": record.ipfs_gateway_url or "Not available",
         "ipfs_provider": record.ipfs_provider or "Not available",
         "ipfs_uploaded_at": record.ipfs_uploaded_at or "Not available",
+        # ── Encrypted Off-Chain Storage (Stage 8) ────────────────────
+        "is_encrypted": record.is_encrypted,
+        "encryption_algorithm": record.encryption_algorithm or "Not available",
+        "encryption_kdf": record.encryption_kdf or "Not available",
+        "encryption_kdf_iterations": (
+            str(record.encryption_kdf_iterations)
+            if record.encryption_kdf_iterations
+            else "Not available"
+        ),
+        "encrypted_file_hash": record.encrypted_file_hash or "Not available",
+        "encrypted_file_name": record.encrypted_file_name or "Not available",
+        "encrypted_ipfs_cid": record.encrypted_ipfs_cid or "Not available",
+        "encrypted_ipfs_uri": record.encrypted_ipfs_uri or "Not available",
+        "encrypted_ipfs_gateway_url": (
+            record.encrypted_ipfs_gateway_url or "Not available"
+        ),
         # ── Local Evidence ───────────────────────────────────────────
         "evidence_filename": f"evidence_{short}.json",
         "package_manifest_hash": manifest_hash or "N/A",
@@ -74,6 +90,37 @@ def build_certificate_data(record: EvidenceRecord, manifest_hash: str = "") -> d
         "limitations": LIMITATIONS_TEXT,
         "declaration": DECLARATION_TEXT,
     }
+
+
+def _encrypted_section_md(d: dict) -> str:
+    """Return the Markdown body for the Encrypted Off-Chain Storage section."""
+    if not d["is_encrypted"]:
+        return (
+            "**Encrypted:** No\n\n"
+            "**Encrypted Storage:** Not available — the file was registered "
+            "without local encryption.\n\n"
+            "> The password or encryption key is not stored in this certificate."
+        )
+    return f"""When a file is sensitive, it can be encrypted locally *before* being
+uploaded to public IPFS, so the gateway only ever sees ciphertext. The on-chain
+hash still anchors the **original** file; the encrypted IPFS copy is a private,
+retrievable backup.
+
+| Field | Value |
+|-------|-------|
+| **Encrypted** | Yes |
+| **Encryption algorithm** | {d['encryption_algorithm']} |
+| **KDF** | {d['encryption_kdf']} |
+| **KDF iterations** | {d['encryption_kdf_iterations']} |
+| **Encrypted file name** | `{d['encrypted_file_name']}` |
+| **Encrypted file SHA-256** | `{d['encrypted_file_hash']}` |
+| **Encrypted IPFS CID** | `{d['encrypted_ipfs_cid']}` |
+| **Encrypted IPFS URI** | `{d['encrypted_ipfs_uri']}` |
+| **Encrypted gateway URL** | {d['encrypted_ipfs_gateway_url']} |
+
+> **The password or encryption key is NOT stored in this certificate, the
+> evidence record, the database, or the package.** If the password is lost, the
+> encrypted file cannot be recovered by this system."""
 
 
 def build_markdown_certificate(record: EvidenceRecord, manifest_hash: str = "") -> str:
@@ -148,7 +195,13 @@ They are derived from the same bytes but are not the same identifier.
 
 ---
 
-## 6. Local Evidence Record
+## 6. Encrypted Off-Chain Storage
+
+{_encrypted_section_md(d)}
+
+---
+
+## 7. Local Evidence Record
 
 | Field | Value |
 |-------|-------|
@@ -157,7 +210,7 @@ They are derived from the same bytes but are not the same identifier.
 
 ---
 
-## 7. Verification Method
+## 8. Verification Method
 
 **Step 1 — Verify the file fingerprint**
 
@@ -187,15 +240,23 @@ python -m proof_client.verify_ipfs --hash {d['file_hash']}
 This downloads the file from IPFS, recomputes its SHA-256, and confirms it
 matches the fingerprint above.
 
+**Step 5 — Verify encrypted IPFS content (if encrypted)**
+
+```bash
+python -m proof_client.verify_encrypted_ipfs --hash {d['file_hash']}
+```
+This downloads the *encrypted* copy from IPFS, decrypts it with the password,
+recomputes the original SHA-256, and confirms it matches the fingerprint above.
+
 ---
 
-## 8. Limitations
+## 9. Limitations
 
 > {d['limitations']}
 
 ---
 
-## 9. Declaration
+## 10. Declaration
 
 {d['declaration']}
 

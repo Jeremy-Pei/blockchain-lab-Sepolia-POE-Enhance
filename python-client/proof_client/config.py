@@ -23,8 +23,22 @@ DB_PATH = PROJECT_ROOT / "evidence.db"
 # Stage 7: local content store used by the mock IPFS client
 MOCK_IPFS_DIR = PROJECT_ROOT / "mock_ipfs_storage"
 
+# Stage 8: local encryption working directories
+ENCRYPTED_DIR = PROJECT_ROOT / "encrypted"
+DECRYPTED_DIR = PROJECT_ROOT / "decrypted"
+DOWNLOADS_DIR = PROJECT_ROOT / "downloads"
+
 # Ensure required directories exist
-for d in (WORKS_DIR, EVIDENCE_DIR, REPORTS_DIR, PACKAGES_DIR, MOCK_IPFS_DIR):
+for d in (
+    WORKS_DIR,
+    EVIDENCE_DIR,
+    REPORTS_DIR,
+    PACKAGES_DIR,
+    MOCK_IPFS_DIR,
+    ENCRYPTED_DIR,
+    DECRYPTED_DIR,
+    DOWNLOADS_DIR,
+):
     d.mkdir(parents=True, exist_ok=True)
 
 # ── Blockchain configuration ──────────────────────────────────────
@@ -42,6 +56,18 @@ IPFS_PROVIDER = os.getenv("IPFS_PROVIDER", "mock")
 IPFS_GATEWAY_URL = os.getenv("IPFS_GATEWAY_URL", "https://ipfs.io/ipfs/")
 PINATA_JWT = os.getenv("PINATA_JWT", "")
 PINATA_API_URL = os.getenv("PINATA_API_URL", "https://api.pinata.cloud")
+
+# ── Encryption configuration (Stage 8) ────────────────────────────
+# AES-256-GCM authenticated encryption with a password-derived key.
+# Files are encrypted locally BEFORE upload to IPFS so that public
+# pinning never exposes the plaintext. The password/key is never stored.
+ENCRYPTION_ALGORITHM = "AES-256-GCM"
+ENCRYPTION_KDF = "PBKDF2-HMAC-SHA256"
+ENCRYPTION_PBKDF2_ITERATIONS = int(
+    os.getenv("ENCRYPTION_PBKDF2_ITERATIONS", "600000")
+)
+ENCRYPTION_SALT_BYTES = 16  # 128-bit salt
+ENCRYPTION_NONCE_BYTES = 12  # 96-bit nonce, the AES-GCM standard
 
 # ── Load ABI ──────────────────────────────────────────────────────
 ABI_PATH = ABI_DIR / "ProofOfExistence.json"

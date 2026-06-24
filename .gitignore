@@ -43,7 +43,17 @@ python-client/packages/evidence_package_*/
 # IPFS mock storage and downloads (Stage 7)
 # ══════════════════════════════════════════════════════════
 python-client/mock_ipfs_storage/
-python-client/downloads/
+
+# ══════════════════════════════════════════════════════════
+# Encrypted / decrypted / downloaded working files (Stage 8)
+# Never commit ciphertext, recovered plaintext, or downloaded blobs.
+# ══════════════════════════════════════════════════════════
+python-client/encrypted/*
+!python-client/encrypted/.gitkeep
+python-client/decrypted/*
+!python-client/decrypted/.gitkeep
+python-client/downloads/*
+!python-client/downloads/.gitkeep
 
 # ══════════════════════════════════════════════════════════
 # Works: keep only sample files

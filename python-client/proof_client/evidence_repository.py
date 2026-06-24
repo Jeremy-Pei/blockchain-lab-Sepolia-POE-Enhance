@@ -37,27 +37,76 @@ CREATE TABLE IF NOT EXISTS evidence (
     ipfs_provider    TEXT    DEFAULT '',
     ipfs_uploaded_at TEXT    DEFAULT '',
     ipfs_sha256      TEXT    DEFAULT '',
+    is_encrypted                INTEGER DEFAULT 0,
+    encryption_algorithm        TEXT    DEFAULT '',
+    encryption_kdf              TEXT    DEFAULT '',
+    encryption_kdf_iterations   INTEGER DEFAULT 0,
+    encryption_salt_hex         TEXT    DEFAULT '',
+    encryption_nonce_hex        TEXT    DEFAULT '',
+    encrypted_file_hash         TEXT    DEFAULT '',
+    encrypted_file_name         TEXT    DEFAULT '',
+    encrypted_ipfs_cid          TEXT    DEFAULT '',
+    encrypted_ipfs_uri          TEXT    DEFAULT '',
+    encrypted_ipfs_gateway_url  TEXT    DEFAULT '',
+    encrypted_ipfs_provider     TEXT    DEFAULT '',
+    encrypted_ipfs_uploaded_at  TEXT    DEFAULT '',
     note             TEXT
 )
 """
 
 # Columns added after the initial schema; migrated in on existing databases.
+# Each entry is (column_name, column_definition).
 _IPFS_COLUMNS = (
-    "ipfs_cid",
-    "ipfs_uri",
-    "ipfs_gateway_url",
-    "ipfs_provider",
-    "ipfs_uploaded_at",
-    "ipfs_sha256",
+    ("ipfs_cid", "TEXT DEFAULT ''"),
+    ("ipfs_uri", "TEXT DEFAULT ''"),
+    ("ipfs_gateway_url", "TEXT DEFAULT ''"),
+    ("ipfs_provider", "TEXT DEFAULT ''"),
+    ("ipfs_uploaded_at", "TEXT DEFAULT ''"),
+    ("ipfs_sha256", "TEXT DEFAULT ''"),
+)
+
+# Stage 8 encryption columns (migrated in on existing databases).
+_ENCRYPTION_COLUMNS = (
+    ("is_encrypted", "INTEGER DEFAULT 0"),
+    ("encryption_algorithm", "TEXT DEFAULT ''"),
+    ("encryption_kdf", "TEXT DEFAULT ''"),
+    ("encryption_kdf_iterations", "INTEGER DEFAULT 0"),
+    ("encryption_salt_hex", "TEXT DEFAULT ''"),
+    ("encryption_nonce_hex", "TEXT DEFAULT ''"),
+    ("encrypted_file_hash", "TEXT DEFAULT ''"),
+    ("encrypted_file_name", "TEXT DEFAULT ''"),
+    ("encrypted_ipfs_cid", "TEXT DEFAULT ''"),
+    ("encrypted_ipfs_uri", "TEXT DEFAULT ''"),
+    ("encrypted_ipfs_gateway_url", "TEXT DEFAULT ''"),
+    ("encrypted_ipfs_provider", "TEXT DEFAULT ''"),
+    ("encrypted_ipfs_uploaded_at", "TEXT DEFAULT ''"),
 )
 
 
+def ensure_column(
+    conn: sqlite3.Connection,
+    table_name: str,
+    column_name: str,
+    column_def: str,
+) -> None:
+    """Add a column to a table if it does not already exist (idempotent).
+
+    A reusable migration primitive so each new stage can add columns without
+    re-implementing the PRAGMA dance.
+    """
+    existing = {
+        row["name"] for row in conn.execute(f"PRAGMA table_info({table_name})")
+    }
+    if column_name not in existing:
+        conn.execute(
+            f"ALTER TABLE {table_name} ADD COLUMN {column_name} {column_def}"
+        )
+
+
 def _migrate(conn: sqlite3.Connection) -> None:
-    """Add any IPFS columns missing from a pre-Stage-7 database."""
-    existing = {row["name"] for row in conn.execute("PRAGMA table_info(evidence)")}
-    for col in _IPFS_COLUMNS:
-        if col not in existing:
-            conn.execute(f"ALTER TABLE evidence ADD COLUMN {col} TEXT DEFAULT ''")
+    """Add any columns missing from a pre-Stage-7 / pre-Stage-8 database."""
+    for col, col_def in (*_IPFS_COLUMNS, *_ENCRYPTION_COLUMNS):
+        ensure_column(conn, "evidence", col, col_def)
 
 
 def _get_conn(db_path: Path | None = None) -> sqlite3.Connection:

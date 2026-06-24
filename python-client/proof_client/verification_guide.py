@@ -57,6 +57,62 @@ python -m proof_client.verify_ipfs --cid {record.ipfs_cid} --expected-hash {reco
 """
 
 
+def _encrypted_section(record: EvidenceRecord) -> str:
+    """Return the Step 5 encrypted-IPFS verification section (Markdown)."""
+    if not record.has_encrypted_ipfs:
+        return """## Step 5 — Verify Encrypted IPFS Content
+
+This file was not stored as encrypted IPFS content, so this step is not
+applicable.
+
+---
+"""
+
+    gw = record.encrypted_ipfs_gateway_url or (
+        f"https://ipfs.io/ipfs/{record.encrypted_ipfs_cid}"
+    )
+    return f"""## Step 5 — Verify Encrypted IPFS Content
+
+A sensitive file was encrypted locally **before** upload, so IPFS only stores
+ciphertext. To verify, download the ciphertext, decrypt it with the password
+provided by the owner, recompute the original SHA-256, and compare it with the
+on-chain hash.
+
+- **Encrypted IPFS CID:** `{record.encrypted_ipfs_cid}`
+- **Encrypted IPFS URI:** `{record.encrypted_ipfs_uri}`
+- **Encrypted gateway URL:** {gw}
+- **Encryption algorithm:** {record.encryption_algorithm or 'N/A'}
+- **KDF:** {record.encryption_kdf or 'N/A'} ({record.encryption_kdf_iterations} iterations)
+- **Encrypted file SHA-256:** `{record.encrypted_file_hash}`
+
+**Automated (one command):**
+```bash
+python -m proof_client.verify_encrypted_ipfs --hash {record.file_hash}
+```
+
+**Manual (step by step):**
+```bash
+# 1. Download the encrypted file from IPFS
+python -m proof_client.ipfs_download {record.encrypted_ipfs_cid} \\
+    -o downloads/encrypted_file.enc
+
+# 2. Decrypt it (you will be prompted for the password)
+python -m proof_client.decrypt_file downloads/encrypted_file.enc \\
+    --metadata encrypted/encryption_metadata.json \\
+    --output decrypted/recovered_file
+
+# 3. Recompute the SHA-256 of the recovered file
+shasum -a 256 decrypted/recovered_file
+# Expected (original file hash): {record.file_hash}
+```
+
+> **The password is never stored in this package.** It must be supplied
+> out-of-band by the owner. Without it, the ciphertext cannot be decrypted.
+
+---
+"""
+
+
 def build_verification_guide(record: EvidenceRecord) -> str:
     """Return the full text of the verification guide (Markdown)."""
     tx = record.tx_hash
@@ -168,6 +224,7 @@ Or manually check SHA-256 of each file against `manifest.json`.
 ---
 
 {_ipfs_section(record)}
+{_encrypted_section(record)}
 ## What This Proves
 
 If all checks pass:
@@ -205,6 +262,16 @@ python -m proof_client.verify_ipfs --cid {record.ipfs_cid} --expected-hash {reco
     else:
         ipfs_block = "\n# 6. IPFS verification: no CID recorded for this file.\n"
 
+    if record.has_encrypted_ipfs:
+        enc_block = f"""
+# 7. Verify the ENCRYPTED IPFS content (CID: {record.encrypted_ipfs_cid})
+#    Downloads ciphertext, decrypts with the owner-supplied password, and
+#    confirms the recovered file's SHA-256 matches the original hash.
+python -m proof_client.verify_encrypted_ipfs --hash {record.file_hash}
+"""
+    else:
+        enc_block = "\n# 7. Encrypted IPFS verification: this record is not encrypted.\n"
+
     return f"""# Verification Commands
 # File: {record.file_name}
 # Hash: {record.file_hash}
@@ -232,7 +299,7 @@ python -m proof_client.verify_package <path_to_package.zip>
 
 # 5. View transaction on block explorer
 # {record.explorer_link or 'N/A'}
-{ipfs_block}
+{ipfs_block}{enc_block}
 
 # Contract: {record.contract_address}
 # Transaction: {tx}

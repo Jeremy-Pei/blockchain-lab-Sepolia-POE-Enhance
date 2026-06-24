@@ -60,9 +60,15 @@ blockchain-lab-Sepolia-POE-Enhance/
 │   │   ├── ipfs_upload.py      #   Stage 7: CLI to upload a file to IPFS
 │   │   ├── ipfs_download.py    #   Stage 7: CLI to download a file by CID
 │   │   ├── verify_ipfs.py      #   Stage 7: CLI to verify IPFS content vs hash
+│   │   ├── crypto_utils.py     #   Stage 8: AES-256-GCM + PBKDF2 primitives
+│   │   ├── encrypt_file.py     #   Stage 8: CLI to encrypt a file locally
+│   │   ├── decrypt_file.py     #   Stage 8: CLI to decrypt a file
+│   │   ├── encrypted_ipfs.py   #   Stage 8: encrypt-then-upload to IPFS
+│   │   ├── verify_encrypted_ipfs.py  # Stage 8: download, decrypt, verify
 │   │   ├── test_all.py         #   Full module test suite
 │   │   ├── test_stage6.py      #   Stage 6 test suite
-│   │   └── test_stage7.py      #   Stage 7 test suite (IPFS)
+│   │   ├── test_stage7.py      #   Stage 7 test suite (IPFS)
+│   │   └── test_stage8.py      #   Stage 8 test suite (encrypted IPFS)
 │   ├── abi/ProofOfExistence.json
 │   ├── works/                  #   Files to register
 │   ├── evidence/               #   Generated evidence JSON files
@@ -156,6 +162,9 @@ python -m proof_client.test_stage6
 # Stage 7: IPFS upload/download, CID, verify_ipfs, package metadata (79 test cases)
 python -m proof_client.test_stage7
 
+# Stage 8: AES-256-GCM encryption, encrypted IPFS, verify_encrypted_ipfs (75 test cases)
+python -m proof_client.test_stage8
+
 # Include on-chain tests (requires Sepolia ETH, consumes gas)
 python -m proof_client.test_all --chain
 ```
@@ -165,6 +174,7 @@ python -m proof_client.test_all --chain
 | Core (`test_all`) | 49 |
 | Stage 6 (`test_stage6`) | 90 |
 | Stage 7 (`test_stage7`) | 79 |
+| Stage 8 (`test_stage8`) | 75 |
 
 ## Evidence Package (Stage 6)
 
@@ -241,6 +251,45 @@ content store ideal for tests; `pinata` uses the Pinata pinning service and need
 > original. The SHA-256 hash — not the CID — remains the primary evidence hash.
 
 📄 Full design, workflow, and privacy notes: [docs/stage7_ipfs_integration.md](docs/stage7_ipfs_integration.md)
+
+## Encrypted IPFS (Stage 8)
+
+Stage 8 makes the Stage 7 privacy warning actionable. A sensitive file can be
+**encrypted locally before** being uploaded to IPFS, so a public gateway only ever
+stores ciphertext. The smart contract still registers the **original** file's
+SHA-256 hash, while the `uri` field points to the encrypted IPFS CID.
+
+```bash
+cd python-client
+export PYTHONPATH=.
+
+# Encrypt / decrypt a file locally (password is prompted, never taken from argv)
+python -m proof_client.encrypt_file works/my_paper.pdf --output encrypted/my_paper.pdf.enc
+python -m proof_client.decrypt_file encrypted/my_paper.pdf.enc \
+    --metadata encrypted/my_paper.pdf.enc.metadata.json --output decrypted/my_paper.pdf
+
+# Register on-chain AND upload an ENCRYPTED copy in one step
+# (registers the ORIGINAL hash; uri becomes the ciphertext's ipfs://<CID>)
+python -m proof_client.register_file works/my_paper.pdf --upload-ipfs --encrypt-before-ipfs
+
+# Verify: download ciphertext, decrypt, recompute the original hash, check on-chain
+python -m proof_client.verify_encrypted_ipfs --hash 0x<original_file_hash>
+```
+
+Encryption is **AES-256-GCM** with a **PBKDF2-HMAC-SHA256** (600k iterations)
+password-derived key, a random 16-byte salt and 12-byte nonce per file. The
+ciphertext is authenticated, so a wrong password or any tampering fails on
+decrypt. Encrypted records gain an `encrypted/` folder in their evidence package,
+an **Encrypted Off-Chain Storage** section in the certificate, and
+**Step 5 — Verify Encrypted IPFS Content** in the verification guide; by default
+an encrypted package **excludes** the plaintext original.
+
+> 🔐 **The password or encryption key is never stored** in the evidence record,
+> the database, the certificate, or the package. If the password is lost, the
+> encrypted file cannot be recovered by this system. This is an educational
+> prototype and has not been professionally audited.
+
+📄 Full design, threat model, and verification: [docs/stage8_encrypted_ipfs.md](docs/stage8_encrypted_ipfs.md)
 
 ## Smart Contract
 

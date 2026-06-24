@@ -189,15 +189,49 @@ def _build_story(record: EvidenceRecord, manifest_hash: str = "") -> list:
         ("Uploaded at UTC", d["ipfs_uploaded_at"]),
     ]))
 
-    # ── Section 6: Local Evidence Record ─────────────────────────
-    story.append(Paragraph("6. Local Evidence Record", s["section"]))
+    # ── Section 6: Encrypted Off-Chain Storage (Stage 8) ─────────
+    story.append(Paragraph("6. Encrypted Off-Chain Storage", s["section"]))
+    if d["is_encrypted"]:
+        story.append(Paragraph(
+            "A sensitive file is encrypted locally <i>before</i> upload, so public "
+            "IPFS only ever stores ciphertext. The on-chain hash still anchors the "
+            "<b>original</b> file; the encrypted IPFS copy is a private backup.",
+            s["body"],
+        ))
+        story.append(_kv_table([
+            ("Encrypted",             "Yes"),
+            ("Encryption algorithm",  d["encryption_algorithm"]),
+            ("KDF",                   d["encryption_kdf"]),
+            ("KDF iterations",        d["encryption_kdf_iterations"]),
+            ("Encrypted file name",   d["encrypted_file_name"]),
+            ("Encrypted file SHA-256", d["encrypted_file_hash"]),
+            ("Encrypted IPFS CID",    d["encrypted_ipfs_cid"]),
+            ("Encrypted IPFS URI",    d["encrypted_ipfs_uri"]),
+            ("Encrypted gateway URL", d["encrypted_ipfs_gateway_url"]),
+        ]))
+        story.append(Paragraph(
+            "The password or encryption key is <b>not</b> stored in this "
+            "certificate. If the password is lost, the encrypted file cannot be "
+            "recovered by this system.",
+            s["warning"],
+        ))
+    else:
+        story.append(Paragraph(
+            "<b>Encrypted:</b> No &nbsp;·&nbsp; Encrypted storage not available — "
+            "the file was registered without local encryption. The password or "
+            "encryption key is not stored in this certificate.",
+            s["body"],
+        ))
+
+    # ── Section 7: Local Evidence Record ─────────────────────────
+    story.append(Paragraph("7. Local Evidence Record", s["section"]))
     story.append(_kv_table([
         ("Evidence JSON filename", d["evidence_filename"]),
         ("Package manifest hash",  d["package_manifest_hash"]),
     ]))
 
-    # ── Section 7: Verification Method ───────────────────────────
-    story.append(Paragraph("7. Verification Method", s["section"]))
+    # ── Section 8: Verification Method ───────────────────────────
+    story.append(Paragraph("8. Verification Method", s["section"]))
     story.append(Paragraph(
         "<b>Step 1</b> — Recompute the SHA-256 hash of the original file and "
         "confirm it matches the fingerprint above.",
@@ -221,13 +255,20 @@ def _build_story(record: EvidenceRecord, manifest_hash: str = "") -> list:
         "to download the content from IPFS and confirm its SHA-256 matches.",
         s["body"],
     ))
+    story.append(Paragraph(
+        "<b>Step 5</b> — If the record is encrypted, run "
+        "<font face='Courier'>python -m proof_client.verify_encrypted_ipfs --hash &lt;file_hash&gt;</font> "
+        "to download the ciphertext, decrypt it with the password, and confirm the "
+        "recovered file's SHA-256 matches.",
+        s["body"],
+    ))
 
-    # ── Section 8: Limitations ───────────────────────────────────
-    story.append(Paragraph("8. Limitations", s["section"]))
+    # ── Section 9: Limitations ───────────────────────────────────
+    story.append(Paragraph("9. Limitations", s["section"]))
     story.append(Paragraph(LIMITATIONS_TEXT, s["warning"]))
 
-    # ── Section 9: Declaration ───────────────────────────────────
-    story.append(Paragraph("9. Declaration", s["section"]))
+    # ── Section 10: Declaration ──────────────────────────────────
+    story.append(Paragraph("10. Declaration", s["section"]))
     story.append(Paragraph(d["declaration"], s["body"]))
 
     story.append(Spacer(1, 6 * mm))

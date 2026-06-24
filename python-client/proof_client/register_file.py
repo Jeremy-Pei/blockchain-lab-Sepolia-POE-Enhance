@@ -12,6 +12,7 @@ the `uri` field was always intended for an off-chain resource pointer.
 
 import argparse
 import sys
+from getpass import getpass
 from pathlib import Path
 
 from proof_client.config import CONTRACT_ADDRESS, EXPLORER_TX_URL, IPFS_PROVIDER
@@ -20,6 +21,9 @@ from proof_client.wallet import get_address
 from proof_client.contract_client import register_hash
 from proof_client.evidence_schema import EvidenceRecord
 from proof_client.evidence_store import save_evidence
+from proof_client.encrypted_ipfs import encrypt_and_upload_to_ipfs
+from proof_client.encrypt_file import write_metadata as _write_enc_metadata
+from proof_client.crypto_utils import EncryptionResult
 from proof_client.ipfs_client import get_client
 from proof_client import evidence_repository as repo
 
@@ -29,6 +33,8 @@ def register_file(
     uri: str | None = None,
     upload_ipfs: bool = False,
     ipfs_provider: str | None = None,
+    encrypt_before_ipfs: bool = False,
+    password: str | None = None,
 ) -> EvidenceRecord:
     """
     Register a single file on the blockchain.
@@ -40,10 +46,21 @@ def register_file(
             explicit uri was supplied.
         upload_ipfs: If True, upload the file to IPFS before registering.
         ipfs_provider: Override the IPFS provider (mock / pinata).
+        encrypt_before_ipfs: If True, encrypt the file locally and upload only
+            the ciphertext to IPFS. Requires upload_ipfs=True. The ORIGINAL
+            file hash is still what gets registered on-chain.
+        password: Encryption password (only used with encrypt_before_ipfs).
+            If None, the caller is prompted interactively.
 
     Returns:
         EvidenceRecord instance.
     """
+    if encrypt_before_ipfs and not upload_ipfs:
+        raise ValueError(
+            "--encrypt-before-ipfs requires --upload-ipfs (only the encrypted "
+            "copy is uploaded; nothing is encrypted without an upload)."
+        )
+
     path = Path(file_path)
     if not path.exists():
         raise FileNotFoundError(f"File not found: {path}")
@@ -51,14 +68,45 @@ def register_file(
     file_name = path.name
     explicit_uri = uri is not None
 
-    # 1) Compute hash
+    # 1) Compute hash of the ORIGINAL plaintext — the primary evidence hash.
     file_hash = sha256_hash(path)
     print(f"📄 File:    {file_name}")
     print(f"🔑 SHA-256: {file_hash}")
 
     # 2) Optional: upload to IPFS first so the on-chain uri can point to it
     ipfs_result = None
-    if upload_ipfs:
+    enc_info: dict | None = None
+    if upload_ipfs and encrypt_before_ipfs:
+        if password is None:
+            password = getpass("Enter encryption password: ")
+            confirm = getpass("Confirm encryption password: ")
+            if password != confirm:
+                raise ValueError("Passwords do not match.")
+        if not password:
+            raise ValueError("Password must not be empty.")
+        print("⏳ Encrypting and uploading ciphertext to IPFS...")
+        enc_info = encrypt_and_upload_to_ipfs(path, password, ipfs_provider)
+        # Persist the encryption metadata sidecar next to the ciphertext.
+        _write_enc_metadata(
+            EncryptionResult(
+                original_path=str(path),
+                encrypted_path=enc_info["encrypted_file_path"],
+                original_sha256=enc_info["original_sha256"],
+                encrypted_sha256=enc_info["encrypted_sha256"],
+                algorithm=enc_info["algorithm"],
+                kdf=enc_info["kdf"],
+                kdf_iterations=enc_info["kdf_iterations"],
+                salt_hex=enc_info["salt_hex"],
+                nonce_hex=enc_info["nonce_hex"],
+                encrypted_at_utc=enc_info["encrypted_at_utc"],
+            ),
+            Path(enc_info["encrypted_file_path"]),
+        )
+        print(f"🔒 Encrypted CID: {enc_info['encrypted_ipfs_cid']}")
+        print(f"🔗 IPFS URI:      {enc_info['encrypted_ipfs_uri']}")
+        if not explicit_uri:
+            uri = enc_info["encrypted_ipfs_uri"]
+    elif upload_ipfs:
         print("⏳ Uploading to IPFS...")
         ipfs_result = get_client(ipfs_provider).upload_file(path)
         print(f"🌀 CID:     {ipfs_result.cid}")
@@ -92,7 +140,7 @@ def register_file(
         explorer_tx_url=EXPLORER_TX_URL,
     )
 
-    # 4b) Attach IPFS metadata if uploaded
+    # 4b) Attach IPFS metadata if a plaintext file was uploaded
     if ipfs_result is not None:
         record.ipfs_cid = ipfs_result.cid
         record.ipfs_uri = ipfs_result.uri
@@ -100,6 +148,31 @@ def register_file(
         record.ipfs_provider = ipfs_result.provider
         record.ipfs_uploaded_at = ipfs_result.uploaded_at_utc
         record.ipfs_sha256 = ipfs_result.file_sha256
+
+    # 4c) Attach encryption + encrypted-IPFS metadata if encrypted
+    if enc_info is not None:
+        record.is_encrypted = True
+        record.encryption_algorithm = enc_info["algorithm"]
+        record.encryption_kdf = enc_info["kdf"]
+        record.encryption_kdf_iterations = enc_info["kdf_iterations"]
+        record.encryption_salt_hex = enc_info["salt_hex"]
+        record.encryption_nonce_hex = enc_info["nonce_hex"]
+        record.encrypted_file_hash = enc_info["encrypted_sha256"]
+        record.encrypted_file_name = enc_info["encrypted_file_name"]
+        record.encrypted_ipfs_cid = enc_info["encrypted_ipfs_cid"]
+        record.encrypted_ipfs_uri = enc_info["encrypted_ipfs_uri"]
+        record.encrypted_ipfs_gateway_url = enc_info["encrypted_ipfs_gateway_url"]
+        record.encrypted_ipfs_provider = enc_info["encrypted_ipfs_provider"]
+        record.encrypted_ipfs_uploaded_at = enc_info["encrypted_ipfs_uploaded_at"]
+        # Mirror the encrypted pointers into the generic IPFS fields so the
+        # existing package/certificate IPFS sections also render. The
+        # ipfs_sha256 here is the CIPHERTEXT hash (what IPFS actually stores).
+        record.ipfs_cid = enc_info["encrypted_ipfs_cid"]
+        record.ipfs_uri = enc_info["encrypted_ipfs_uri"]
+        record.ipfs_gateway_url = enc_info["encrypted_ipfs_gateway_url"]
+        record.ipfs_provider = enc_info["encrypted_ipfs_provider"]
+        record.ipfs_uploaded_at = enc_info["encrypted_ipfs_uploaded_at"]
+        record.ipfs_sha256 = enc_info["encrypted_sha256"]
 
     # 5) Dual-write: JSON + SQLite
     save_evidence(record)
@@ -129,15 +202,26 @@ def _parse_args(argv: list[str]) -> argparse.Namespace:
         default=None,
         help=f"IPFS provider when --upload-ipfs is set (default: {IPFS_PROVIDER})",
     )
+    parser.add_argument(
+        "--encrypt-before-ipfs",
+        action="store_true",
+        help="Encrypt the file locally and upload only the ciphertext to IPFS "
+        "(requires --upload-ipfs). The original file hash is still registered.",
+    )
     return parser.parse_args(argv)
 
 
 # ── CLI entry point ───────────────────────────────────────────────
 if __name__ == "__main__":
     args = _parse_args(sys.argv[1:])
-    register_file(
-        args.file_path,
-        args.uri,
-        upload_ipfs=args.upload_ipfs,
-        ipfs_provider=args.ipfs_provider,
-    )
+    try:
+        register_file(
+            args.file_path,
+            args.uri,
+            upload_ipfs=args.upload_ipfs,
+            ipfs_provider=args.ipfs_provider,
+            encrypt_before_ipfs=args.encrypt_before_ipfs,
+        )
+    except ValueError as exc:
+        print(f"❌ {exc}")
+        sys.exit(2)
