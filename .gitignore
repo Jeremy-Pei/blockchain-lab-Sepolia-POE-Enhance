@@ -45,6 +45,16 @@ python-client/packages/evidence_package_*/
 python-client/mock_ipfs_storage/
 
 # ══════════════════════════════════════════════════════════
+# Batch Merkle evidence packages and reports (Stage 9)
+# ══════════════════════════════════════════════════════════
+python-client/evidence/batches/*
+!python-client/evidence/batches/.gitkeep
+python-client/packages/batches/*
+!python-client/packages/batches/.gitkeep
+python-client/reports/batches/*
+!python-client/reports/batches/.gitkeep
+
+# ══════════════════════════════════════════════════════════
 # Encrypted / decrypted / downloaded working files (Stage 8)
 # Never commit ciphertext, recovered plaintext, or downloaded blobs.
 # ══════════════════════════════════════════════════════════
@@ -97,3 +107,10 @@ cmake-build-*/
 # Logs
 # ══════════════════════════════════════════════════════════
 *.log
+
+# ══════════════════════════════════════════════════════════
+# Agent skills (obsidian-skills, installed via npx skills)
+# ══════════════════════════════════════════════════════════
+.agents/
+.claude/skills/
+skills-lock.json

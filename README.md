@@ -65,15 +65,24 @@ blockchain-lab-Sepolia-POE-Enhance/
 │   │   ├── decrypt_file.py     #   Stage 8: CLI to decrypt a file
 │   │   ├── encrypted_ipfs.py   #   Stage 8: encrypt-then-upload to IPFS
 │   │   ├── verify_encrypted_ipfs.py  # Stage 8: download, decrypt, verify
+│   │   ├── merkle_tree.py      #   Stage 9: Merkle tree construction + proof
+│   │   ├── merkle_evidence.py  #   Stage 9: batch evidence data structures
+│   │   ├── merkle_report.py    #   Stage 9: batch Markdown + PDF certificate
+│   │   ├── batch_merkle_register.py  # Stage 9: batch registration CLI
+│   │   ├── verify_merkle_proof.py    # Stage 9: per-file Merkle proof verify CLI
 │   │   ├── test_all.py         #   Full module test suite
 │   │   ├── test_stage6.py      #   Stage 6 test suite
 │   │   ├── test_stage7.py      #   Stage 7 test suite (IPFS)
-│   │   └── test_stage8.py      #   Stage 8 test suite (encrypted IPFS)
+│   │   ├── test_stage8.py      #   Stage 8 test suite (encrypted IPFS)
+│   │   └── test_stage9.py      #   Stage 9 test suite (Merkle batch)
 │   ├── abi/ProofOfExistence.json
 │   ├── works/                  #   Files to register
 │   ├── evidence/               #   Generated evidence JSON files
+│   │   └── batches/            #   Stage 9: batch Merkle evidence dirs
 │   ├── reports/                #   Generated proof reports
+│   │   └── batches/            #   Stage 9: batch Markdown + PDF certificates
 │   ├── packages/               #   Generated evidence packages (ZIP)
+│   │   └── batches/            #   Stage 9: batch evidence package ZIPs
 │   ├── .env.example
 │   └── requirements.txt
 │
@@ -165,6 +174,9 @@ python -m proof_client.test_stage7
 # Stage 8: AES-256-GCM encryption, encrypted IPFS, verify_encrypted_ipfs (75 test cases)
 python -m proof_client.test_stage8
 
+# Stage 9: Merkle batch registration, proofs, package, verify CLI (84 test cases)
+python -m proof_client.test_stage9
+
 # Include on-chain tests (requires Sepolia ETH, consumes gas)
 python -m proof_client.test_all --chain
 ```
@@ -175,6 +187,7 @@ python -m proof_client.test_all --chain
 | Stage 6 (`test_stage6`) | 90 |
 | Stage 7 (`test_stage7`) | 79 |
 | Stage 8 (`test_stage8`) | 75 |
+| Stage 9 (`test_stage9`) | 84 |
 
 ## Evidence Package (Stage 6)
 
@@ -290,6 +303,81 @@ an encrypted package **excludes** the plaintext original.
 > prototype and has not been professionally audited.
 
 📄 Full design, threat model, and verification: [docs/stage8_encrypted_ipfs.md](docs/stage8_encrypted_ipfs.md)
+
+## Merkle Batch Registration (Stage 9)
+
+Stage 9 makes registration **scalable and gas-efficient**. Instead of one
+blockchain transaction per file, many file hashes are combined into a single
+**Merkle tree**, and only the **Merkle root** is registered on-chain. Each file
+receives an independent **Merkle proof** so any third party can verify that a
+specific file was part of the registered batch.
+
+```
+many files
+→ many SHA-256 hashes
+→ Merkle tree
+→ Merkle root
+→ one blockchain transaction
+→ one proof per file
+```
+
+```bash
+cd python-client
+export PYTHONPATH=.
+
+# Register a batch of files (Merkle root goes on-chain; one proof per file)
+python -m proof_client.batch_merkle_register works/ \
+    --title "My Evidence Batch" \
+    --author "Author Name" \
+    --description "Batch proof-of-existence for multiple works."
+
+# Recurse into sub-directories
+python -m proof_client.batch_merkle_register works/ --recursive
+
+# Dry-run: build tree and evidence without a blockchain transaction
+python -m proof_client.batch_merkle_register works/ --dry-run
+
+# Verify that one file belongs to a registered batch (local only)
+python -m proof_client.verify_merkle_proof \
+    --file works/paper.pdf \
+    --proof evidence/batches/<batch_id>/proofs/paper.pdf.proof.json
+
+# Verify with on-chain confirmation
+python -m proof_client.verify_merkle_proof \
+    --file works/paper.pdf \
+    --proof evidence/batches/<batch_id>/proofs/paper.pdf.proof.json \
+    --chain
+```
+
+**Merkle tree rules** (fully documented in each `batch_evidence.json` so any
+verifier can reproduce them independently):
+
+| Parameter | Rule |
+|-----------|------|
+| Leaf hash | SHA-256 of file bytes |
+| Leaf ordering | Normalised relative path, ascending lexicographic |
+| Internal node | SHA-256(left\_bytes \|\| right\_bytes) |
+| Odd-level padding | Duplicate the last node |
+| Hash encoding | 0x-prefixed lowercase hex |
+
+The batch package mirrors the single-file package structure:
+
+```
+merkle_batch_package_<date>_<short>/
+├── original/          # copies of registered files
+├── batch/             # batch_evidence.json, merkle_tree.json, leaves.json
+├── proofs/            # one <file>.proof.json per file
+├── reports/           # batch_certificate.md + batch_certificate.pdf
+├── verification/      # batch_verification_guide.md + commands
+├── manifest.json      # SHA-256 checksums for every file in the package
+└── README.md
+```
+
+> **What this proves:** A Merkle proof verifies that a file hash was included in
+> a registered batch root. It does not prove legal authorship, copyright
+> ownership, or originality.
+
+📄 Full design: [docs/stage9_merkle_batch_registration.md](docs/stage9_merkle_batch_registration.md)
 
 ## Smart Contract
 

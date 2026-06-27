@@ -28,6 +28,11 @@ ENCRYPTED_DIR = PROJECT_ROOT / "encrypted"
 DECRYPTED_DIR = PROJECT_ROOT / "decrypted"
 DOWNLOADS_DIR = PROJECT_ROOT / "downloads"
 
+# Stage 9: batch Merkle registration directories
+BATCH_EVIDENCE_DIR = EVIDENCE_DIR / "batches"
+BATCH_PACKAGES_DIR = PACKAGES_DIR / "batches"
+BATCH_REPORTS_DIR = REPORTS_DIR / "batches"
+
 # Ensure required directories exist
 for d in (
     WORKS_DIR,
@@ -38,6 +43,9 @@ for d in (
     ENCRYPTED_DIR,
     DECRYPTED_DIR,
     DOWNLOADS_DIR,
+    BATCH_EVIDENCE_DIR,
+    BATCH_PACKAGES_DIR,
+    BATCH_REPORTS_DIR,
 ):
     d.mkdir(parents=True, exist_ok=True)
 

@@ -205,3 +205,124 @@ def find_by_owner(owner: str) -> list[EvidenceRecord]:
         return [EvidenceRecord.from_dict(dict(r)) for r in rows]
     finally:
         conn.close()
+
+
+# ── Stage 9: Batch Merkle evidence table ──────────────────────────
+
+_CREATE_BATCH_TABLE_SQL = """
+CREATE TABLE IF NOT EXISTS batch_evidence_records (
+    id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+    batch_id            TEXT    NOT NULL UNIQUE,
+    batch_title         TEXT    DEFAULT '',
+    author              TEXT    DEFAULT '',
+    description         TEXT    DEFAULT '',
+    file_count          INTEGER DEFAULT 0,
+    merkle_root         TEXT    NOT NULL UNIQUE,
+    uri                 TEXT    DEFAULT '',
+    network             TEXT    DEFAULT 'Ethereum Sepolia',
+    chain_id            INTEGER DEFAULT 11155111,
+    contract_address    TEXT    DEFAULT '',
+    owner_address       TEXT    DEFAULT '',
+    transaction_hash    TEXT    DEFAULT '' UNIQUE,
+    block_number        INTEGER DEFAULT 0,
+    block_timestamp     INTEGER DEFAULT 0,
+    explorer_url        TEXT    DEFAULT '',
+    batch_evidence_json TEXT    DEFAULT '',
+    created_at_utc      TEXT    NOT NULL
+)
+"""
+
+
+def _get_batch_conn(db_path: Path | None = None) -> sqlite3.Connection:
+    """Open a database connection and ensure the batch table exists."""
+    conn = sqlite3.connect(str(db_path or DB_PATH))
+    conn.row_factory = sqlite3.Row
+    conn.execute(_CREATE_TABLE_SQL)
+    _migrate(conn)
+    conn.execute(_CREATE_BATCH_TABLE_SQL)
+    conn.commit()
+    return conn
+
+
+def insert_batch_evidence(evidence: dict, db_path: Path | None = None) -> int:
+    """
+    Insert a batch evidence record.
+
+    Args:
+        evidence: Dict matching the batch_evidence_records schema.
+        db_path: Optional override for the database path (used in tests).
+
+    Returns:
+        Row ID of the inserted row.
+    """
+    conn = _get_batch_conn(db_path)
+    try:
+        cur = conn.execute(
+            """
+            INSERT INTO batch_evidence_records (
+                batch_id, batch_title, author, description, file_count,
+                merkle_root, uri, network, chain_id, contract_address,
+                owner_address, transaction_hash, block_number, block_timestamp,
+                explorer_url, batch_evidence_json, created_at_utc
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                evidence.get("batch_id", ""),
+                evidence.get("batch_title", ""),
+                evidence.get("author", ""),
+                evidence.get("description", ""),
+                evidence.get("file_count", 0),
+                evidence.get("merkle_root", ""),
+                evidence.get("uri", ""),
+                evidence.get("network", "Ethereum Sepolia"),
+                evidence.get("chain_id", 11155111),
+                evidence.get("contract_address", ""),
+                evidence.get("owner_address", ""),
+                evidence.get("transaction_hash", ""),
+                evidence.get("block_number", 0),
+                evidence.get("block_timestamp", 0),
+                evidence.get("explorer_url", ""),
+                evidence.get("batch_evidence_json", ""),
+                evidence.get("created_at_utc", ""),
+            ),
+        )
+        conn.commit()
+        return cur.lastrowid
+    finally:
+        conn.close()
+
+
+def find_batch_by_id(batch_id: str, db_path: Path | None = None) -> dict | None:
+    """Find a batch evidence record by batch_id."""
+    conn = _get_batch_conn(db_path)
+    try:
+        row = conn.execute(
+            "SELECT * FROM batch_evidence_records WHERE batch_id = ?", (batch_id,)
+        ).fetchone()
+        return dict(row) if row else None
+    finally:
+        conn.close()
+
+
+def find_batch_by_merkle_root(merkle_root: str, db_path: Path | None = None) -> dict | None:
+    """Find a batch evidence record by its Merkle root."""
+    conn = _get_batch_conn(db_path)
+    try:
+        row = conn.execute(
+            "SELECT * FROM batch_evidence_records WHERE merkle_root = ?", (merkle_root,)
+        ).fetchone()
+        return dict(row) if row else None
+    finally:
+        conn.close()
+
+
+def list_batches(limit: int = 20, db_path: Path | None = None) -> list[dict]:
+    """Return the most recent batch evidence records."""
+    conn = _get_batch_conn(db_path)
+    try:
+        rows = conn.execute(
+            "SELECT * FROM batch_evidence_records ORDER BY id DESC LIMIT ?", (limit,)
+        ).fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        conn.close()
