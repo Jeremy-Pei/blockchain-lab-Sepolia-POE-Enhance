@@ -33,6 +33,12 @@ BATCH_EVIDENCE_DIR = EVIDENCE_DIR / "batches"
 BATCH_PACKAGES_DIR = PACKAGES_DIR / "batches"
 BATCH_REPORTS_DIR = REPORTS_DIR / "batches"
 
+# Stage 10: FastAPI service working directories
+#   UPLOADS_DIR  → files received via multipart upload are saved here
+#   API_TEMP_DIR → scratch space for transient API artifacts (proofs, etc.)
+UPLOADS_DIR = PROJECT_ROOT / "uploads"
+API_TEMP_DIR = PROJECT_ROOT / "api_tmp"
+
 # Ensure required directories exist
 for d in (
     WORKS_DIR,
@@ -46,6 +52,8 @@ for d in (
     BATCH_EVIDENCE_DIR,
     BATCH_PACKAGES_DIR,
     BATCH_REPORTS_DIR,
+    UPLOADS_DIR,
+    API_TEMP_DIR,
 ):
     d.mkdir(parents=True, exist_ok=True)
 

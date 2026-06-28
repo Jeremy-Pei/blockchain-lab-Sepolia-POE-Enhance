@@ -66,6 +66,14 @@ python-client/downloads/*
 !python-client/downloads/.gitkeep
 
 # ══════════════════════════════════════════════════════════
+# Stage 10: FastAPI service upload / temp directories
+# ══════════════════════════════════════════════════════════
+python-client/uploads/*
+!python-client/uploads/.gitkeep
+python-client/api_tmp/*
+!python-client/api_tmp/.gitkeep
+
+# ══════════════════════════════════════════════════════════
 # Works: keep only sample files
 # ══════════════════════════════════════════════════════════
 python-client/works/*

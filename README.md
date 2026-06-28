@@ -75,8 +75,15 @@ blockchain-lab-Sepolia-POE-Enhance/
 │   │   ├── test_stage7.py      #   Stage 7 test suite (IPFS)
 │   │   ├── test_stage8.py      #   Stage 8 test suite (encrypted IPFS)
 │   │   └── test_stage9.py      #   Stage 9 test suite (Merkle batch)
+│   ├── api/                    # Stage 10: FastAPI evidence service
+│   │   ├── main.py            #   App factory + routers + error envelope
+│   │   ├── services.py        #   Adapter layer over proof_client
+│   │   ├── schemas.py         #   Pydantic request/response models
+│   │   ├── routes_*.py        #   Health/Files/Register/Verify/Evidence/Packages/Batches
+│   │   └── test_stage10_api.py #  Stage 10 test suite (FastAPI)
 │   ├── abi/ProofOfExistence.json
 │   ├── works/                  #   Files to register
+│   ├── uploads/                #   Stage 10: API file uploads
 │   ├── evidence/               #   Generated evidence JSON files
 │   │   └── batches/            #   Stage 9: batch Merkle evidence dirs
 │   ├── reports/                #   Generated proof reports
@@ -177,6 +184,9 @@ python -m proof_client.test_stage8
 # Stage 9: Merkle batch registration, proofs, package, verify CLI (84 test cases)
 python -m proof_client.test_stage9
 
+# Stage 10: FastAPI evidence service endpoints (90 test cases)
+python -m api.test_stage10_api
+
 # Include on-chain tests (requires Sepolia ETH, consumes gas)
 python -m proof_client.test_all --chain
 ```
@@ -188,6 +198,7 @@ python -m proof_client.test_all --chain
 | Stage 7 (`test_stage7`) | 79 |
 | Stage 8 (`test_stage8`) | 75 |
 | Stage 9 (`test_stage9`) | 84 |
+| Stage 10 (`api.test_stage10_api`) | 90 |
 
 ## Evidence Package (Stage 6)
 
@@ -378,6 +389,44 @@ merkle_batch_package_<date>_<short>/
 > ownership, or originality.
 
 📄 Full design: [docs/stage9_merkle_batch_registration.md](docs/stage9_merkle_batch_registration.md)
+
+## FastAPI Evidence Service (Stage 10)
+
+Stage 10 exposes the Proof-of-Existence toolkit as a local **FastAPI** service.
+The existing CLI workflows are wrapped into HTTP endpoints for file hashing,
+registration, verification, evidence query, package export, and Merkle batch
+operations — so other programs (and a future Web Dashboard) can drive the
+system over REST. The proof model, smart contract, and all previous stages are
+unchanged.
+
+```bash
+cd python-client
+PYTHONPATH=. .venv/bin/uvicorn api.main:app --reload
+# Interactive Swagger docs: http://127.0.0.1:8000/docs
+```
+
+```bash
+# Liveness
+curl http://127.0.0.1:8000/health
+
+# Upload a file and get its SHA-256
+curl -F "file=@works/sample_work.txt" http://127.0.0.1:8000/files/hash
+
+# Register a file on-chain (multipart form)
+curl -F "file=@works/sample_work.txt" -F "title=My Paper" \
+     http://127.0.0.1:8000/register/file
+```
+
+Endpoint groups: `/health`, `/files`, `/register`, `/verify`, `/evidence`,
+`/packages`, `/batches` (20 routes total). Every response carries a `status`
+field (`"ok"` / `"error"`).
+
+> ⚠️ **Local development only.** This service can sign on-chain transactions
+> using the `.env` private key, read local files, and accept encryption
+> passwords. Do **not** expose it to the public internet without authentication,
+> rate limiting, input validation, and secure key management.
+
+📄 Full design: [docs/stage10_fastapi_service.md](docs/stage10_fastapi_service.md)
 
 ## Smart Contract
 

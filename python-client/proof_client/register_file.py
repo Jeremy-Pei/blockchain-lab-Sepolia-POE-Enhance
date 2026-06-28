@@ -35,6 +35,7 @@ def register_file(
     ipfs_provider: str | None = None,
     encrypt_before_ipfs: bool = False,
     password: str | None = None,
+    note: str | None = None,
 ) -> EvidenceRecord:
     """
     Register a single file on the blockchain.
@@ -51,6 +52,8 @@ def register_file(
             file hash is still what gets registered on-chain.
         password: Encryption password (only used with encrypt_before_ipfs).
             If None, the caller is prompted interactively.
+        note: Optional free-text note stored on the evidence record (used by
+            the Stage 10 API to carry title / author / description metadata).
 
     Returns:
         EvidenceRecord instance.
@@ -138,6 +141,7 @@ def register_file(
         status=result["status"],
         contract_address=CONTRACT_ADDRESS,
         explorer_tx_url=EXPLORER_TX_URL,
+        note=note,
     )
 
     # 4b) Attach IPFS metadata if a plaintext file was uploaded
