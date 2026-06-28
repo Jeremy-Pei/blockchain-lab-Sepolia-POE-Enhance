@@ -6,6 +6,11 @@
 
 ---
 
+**Stage 9 made the evidence system scalable. Stage 10 makes it callable.** The
+system is no longer only a CLI toolkit — it is now a local evidence service.
+
+---
+
 ## Where We Left Off
 
 Stage 9 made the system *scalable*. Instead of paying for one transaction per
