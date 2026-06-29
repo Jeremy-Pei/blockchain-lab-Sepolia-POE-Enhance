@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="text-center py-5">
+  <h2 class="text-danger">{{ title or "Error" }}</h2>
+  <p class="lead mt-3">{{ message }}</p>
+  <div class="mt-4">
+    <a href="javascript:history.back()" class="btn btn-outline-secondary me-2">Back</a>
+    <a href="/" class="btn btn-outline-primary">Home</a>
+  </div>
+</div>
+{% endblock %}

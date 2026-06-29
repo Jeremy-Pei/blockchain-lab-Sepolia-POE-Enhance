@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>🗂 Batch Browser</h2>
+<p class="text-muted">Merkle batch registration records.</p>
+
+{% if records %}
+<div class="table-responsive">
+  <table class="table table-hover table-sm align-middle">
+    <thead class="table-dark">
+      <tr>
+        <th>Batch ID</th>
+        <th>Title</th>
+        <th>Files</th>
+        <th>Merkle Root</th>
+        <th>Tx Hash</th>
+        <th>Created At</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in records %}
+      <tr>
+        <td class="hash-text">{{ (r.batch_id or "")[:12] }}{% if r.batch_id %}…{% endif %}</td>
+        <td>{{ r.title or "—" }}</td>
+        <td>{{ r.file_count or "—" }}</td>
+        <td class="hash-text">{{ (r.merkle_root or "")[:12] }}{% if r.merkle_root %}…{% endif %}</td>
+        <td class="hash-text">{{ (r.tx_hash or "")[:12] }}{% if r.tx_hash %}…{% endif %}</td>
+        <td>{{ (r.created_at or "")[:19] }}</td>
+        <td>
+          <a href="/dashboard/batches/{{ r.batch_id }}" class="btn btn-sm btn-outline-primary">View</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="alert alert-info">No batch records found.  Run a Merkle batch registration to get started.</div>
+{% endif %}
+
+<a href="/" class="btn btn-outline-secondary mt-2">Back</a>
+{% endblock %}

@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>📋 Batch Detail</h2>
+
+<div class="card shadow-sm mb-4">
+  <div class="card-body">
+    <table class="table table-bordered mb-0">
+      <tbody>
+        {% for key, val in record.items() %}
+        {% if key != "leaves" and val is not none and val != "" and val != 0 and val != false and val != [] %}
+        <tr>
+          <th class="w-25 text-muted" scope="row">{{ key }}</th>
+          <td>
+            {% if key in ("merkle_root", "tx_hash", "contract_address", "batch_id") %}
+            <span class="hash-text" id="bd-{{ loop.index }}">{{ val }}</span>
+            <button class="btn btn-outline-secondary btn-sm py-0 px-1 ms-1"
+                    onclick="copyText('bd-{{ loop.index }}', '{{ val }}')">Copy</button>
+            {% elif key == "explorer_link" and val %}
+            <a href="{{ val }}" target="_blank" class="text-break">{{ val }}</a>
+            {% else %}
+            <span class="text-break">{{ val }}</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endif %}
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% if record.leaves %}
+<h5>Included Files ({{ record.leaves | length }})</h5>
+{% if record.leaves | length > 50 %}
+<div class="alert alert-info">Showing first 50 of {{ record.leaves | length }} files.</div>
+{% endif %}
+<div class="table-responsive">
+  <table class="table table-sm table-striped">
+    <thead><tr><th>#</th><th>Path</th><th>Hash</th></tr></thead>
+    <tbody>
+      {% for leaf in record.leaves[:50] %}
+      <tr>
+        <td>{{ loop.index }}</td>
+        <td>{{ leaf.relative_path or leaf.path or leaf }}</td>
+        <td class="hash-text">{{ leaf.file_hash or leaf.hash or "" }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+<a href="/dashboard/batches" class="btn btn-outline-primary">Back to Batches</a>
+<a href="/" class="btn btn-outline-secondary ms-2">Home</a>
+{% endblock %}

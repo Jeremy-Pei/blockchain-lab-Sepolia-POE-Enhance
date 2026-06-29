@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>🔑 Hash a File</h2>
+<p class="text-muted">Upload a file to compute its SHA-256 hash.  No data is sent to the blockchain.</p>
+
+<div class="card shadow-sm">
+  <div class="card-body">
+    <form method="post" enctype="multipart/form-data" action="/dashboard/hash">
+      <div class="mb-3">
+        <label for="file" class="form-label fw-semibold">File</label>
+        <input type="file" class="form-control" id="file" name="file" required>
+      </div>
+      <button type="submit" class="btn btn-primary">Compute Hash</button>
+      <a href="/" class="btn btn-outline-secondary ms-2">Back</a>
+    </form>
+  </div>
+</div>
+{% endblock %}

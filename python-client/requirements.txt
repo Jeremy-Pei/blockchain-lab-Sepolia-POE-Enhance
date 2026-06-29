@@ -8,3 +8,5 @@ fastapi>=0.110.0       # Stage 10: local FastAPI evidence service
 uvicorn[standard]>=0.27.0  # Stage 10: ASGI server for the FastAPI app
 python-multipart>=0.0.9    # Stage 10: multipart/form-data file uploads
 httpx>=0.27.0          # Stage 10: required by fastapi.testclient.TestClient
+jinja2>=3.1.0          # Stage 11: Jinja2 template engine for web dashboard
+aiofiles>=23.0.0       # Stage 11: async file I/O for StaticFiles

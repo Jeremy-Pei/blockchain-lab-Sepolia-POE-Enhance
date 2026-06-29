@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>📂 Evidence Browser</h2>
+<p class="text-muted">Single-file evidence records stored in the local database.</p>
+
+{% if records %}
+<div class="table-responsive">
+  <table class="table table-hover table-sm align-middle">
+    <thead class="table-dark">
+      <tr>
+        <th>File Name</th>
+        <th>File Hash</th>
+        <th>Network</th>
+        <th>Tx Hash</th>
+        <th>Created At</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in records %}
+      <tr>
+        <td>{{ r.file_name }}</td>
+        <td>
+          <span class="hash-text" id="fh-{{ loop.index }}">{{ r.file_hash[:20] }}…</span>
+          <button class="btn btn-outline-secondary btn-sm py-0 px-1"
+                  onclick="copyText('fh-{{ loop.index }}', '{{ r.file_hash }}')">Copy</button>
+        </td>
+        <td><span class="badge bg-secondary">{{ r.network }}</span></td>
+        <td class="hash-text">{{ (r.tx_hash or "")[:12] }}{% if r.tx_hash %}…{% endif %}</td>
+        <td>{{ (r.created_at or "")[:19] }}</td>
+        <td>
+          <a href="/dashboard/evidence/{{ r.file_hash }}" class="btn btn-sm btn-outline-primary">View</a>
+          {% if r.explorer_link %}
+          <a href="{{ r.explorer_link }}" target="_blank" class="btn btn-sm btn-outline-secondary">Explorer</a>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="alert alert-info">No evidence records found.  Register a file to get started.</div>
+{% endif %}
+
+<a href="/" class="btn btn-outline-secondary mt-2">Back</a>
+{% endblock %}

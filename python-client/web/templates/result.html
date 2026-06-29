@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>{{ title or "Result" }}</h2>
+
+{% if result %}
+
+{% if result.passed is defined %}
+  {% if result.passed %}
+  <div class="mb-3">
+    <span class="badge bg-success fs-6 status-badge">&#10003; PASSED</span>
+  </div>
+  {% else %}
+  <div class="mb-3">
+    <span class="badge bg-danger fs-6 status-badge">&#10007; FAILED</span>
+  </div>
+  {% endif %}
+{% elif result.status == "ok" %}
+<div class="mb-3">
+  <span class="badge bg-success fs-6 status-badge">&#10003; Success</span>
+</div>
+{% endif %}
+
+{% set skip_keys = ["record", "details", "status", "passed"] %}
+
+<div class="card shadow-sm mb-4">
+  <div class="card-body">
+    <table class="table table-bordered mb-0">
+      <tbody>
+        {% set counter = namespace(n=0) %}
+        {% for key, val in result.items() %}
+        {% if key not in skip_keys and val is not none and val != "" %}
+        {% set counter.n = counter.n + 1 %}
+        <tr>
+          <th class="w-25 text-muted" scope="row">{{ key }}</th>
+          <td>
+            {% if key in ("file_hash", "transaction_hash", "merkle_root", "owner", "ipfs_cid") %}
+            <span class="hash-text" id="rv-{{ counter.n }}">{{ val }}</span>
+            <button class="btn btn-outline-secondary btn-sm py-0 px-1 ms-1"
+                    onclick="copyText('rv-{{ counter.n }}', '{{ val }}')">Copy</button>
+            {% elif key == "explorer_url" and val %}
+            <a href="{{ val }}" target="_blank" class="text-break">{{ val }}</a>
+            {% elif key in ("zip_path", "package_path", "evidence_path") %}
+            <span class="text-break text-muted">{{ val }}</span>
+            {% elif key == "message" %}
+            <span class="text-break">{{ val }}</span>
+            {% else %}
+            <span class="text-break">{{ val }}</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endif %}
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% if result.details %}
+<h5 class="mt-4">Details</h5>
+<pre class="bg-light border rounded p-3 small text-break">{{ result.details | tojson(indent=2) }}</pre>
+{% endif %}
+
+{% if result.record %}
+<h5 class="mt-4">Full Record</h5>
+<pre class="bg-light border rounded p-3 small text-break">{{ result.record | tojson(indent=2) }}</pre>
+{% endif %}
+
+{% else %}
+<div class="alert alert-warning">No result data available.</div>
+{% endif %}
+
+<a href="javascript:history.back()" class="btn btn-outline-secondary mt-2">Back</a>
+<a href="/" class="btn btn-outline-primary ms-2">Home</a>
+{% endblock %}

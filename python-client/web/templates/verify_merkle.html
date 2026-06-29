@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>🌿 Verify Merkle Proof</h2>
+<p class="text-muted">Upload a target file and its proof JSON to verify membership in a Merkle batch.</p>
+
+<div class="card shadow-sm">
+  <div class="card-body">
+    <form method="post" enctype="multipart/form-data" action="/dashboard/verify-merkle">
+      <div class="mb-3">
+        <label for="file" class="form-label fw-semibold">Target File <span class="text-danger">*</span></label>
+        <input type="file" class="form-control" id="file" name="file" required>
+      </div>
+      <div class="mb-3">
+        <label for="proof" class="form-label fw-semibold">Proof JSON <span class="text-danger">*</span></label>
+        <input type="file" class="form-control" id="proof" name="proof" accept=".json" required>
+        <div class="form-text">The <code>*.proof.json</code> file generated during batch registration.</div>
+      </div>
+      <div class="form-check mb-3">
+        <input class="form-check-input" type="checkbox" id="check_blockchain" name="check_blockchain" value="on">
+        <label class="form-check-label" for="check_blockchain">
+          Also verify Merkle root on-chain
+        </label>
+      </div>
+      <button type="submit" class="btn btn-secondary">Verify Merkle Proof</button>
+      <a href="/" class="btn btn-outline-secondary ms-2">Back</a>
+    </form>
+  </div>
+</div>
+{% endblock %}

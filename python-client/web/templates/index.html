@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="text-center mb-5">
+  <h1 class="display-5 fw-bold">Proof-of-Existence Evidence Dashboard</h1>
+  <p class="lead text-muted">
+    A local dashboard for blockchain-based evidence registration, verification, and packaging.
+  </p>
+  <div class="alert alert-warning d-inline-block mt-2" role="alert">
+    ⚠️ Local development only — do not expose to the public internet.
+  </div>
+</div>
+
+<div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4">
+
+  <div class="col">
+    <div class="card h-100 card-action shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title">🔑 Hash a File</h5>
+        <p class="card-text text-muted">Compute the SHA-256 hash of any file without registering it.</p>
+      </div>
+      <div class="card-footer bg-transparent">
+        <a href="/dashboard/hash" class="btn btn-outline-primary w-100">Hash File</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="card h-100 card-action shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title">📝 Register Evidence</h5>
+        <p class="card-text text-muted">Register a file hash on-chain (plain, IPFS, or encrypted IPFS).</p>
+      </div>
+      <div class="card-footer bg-transparent">
+        <a href="/dashboard/register" class="btn btn-outline-success w-100">Register</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="card h-100 card-action shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title">✅ Verify File</h5>
+        <p class="card-text text-muted">Check whether a file's hash is registered on the blockchain.</p>
+      </div>
+      <div class="card-footer bg-transparent">
+        <a href="/dashboard/verify" class="btn btn-outline-info w-100">Verify</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="card h-100 card-action shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title">🌿 Merkle Proof</h5>
+        <p class="card-text text-muted">Verify a file belongs to a Merkle batch using its proof JSON.</p>
+      </div>
+      <div class="card-footer bg-transparent">
+        <a href="/dashboard/verify-merkle" class="btn btn-outline-secondary w-100">Verify Merkle</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="card h-100 card-action shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title">📂 Browse Evidence</h5>
+        <p class="card-text text-muted">Browse single-file evidence records stored in the local database.</p>
+      </div>
+      <div class="card-footer bg-transparent">
+        <a href="/dashboard/evidence" class="btn btn-outline-dark w-100">Evidence</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="card h-100 card-action shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title">🗂 Browse Batches</h5>
+        <p class="card-text text-muted">Browse Merkle batch registration records.</p>
+      </div>
+      <div class="card-footer bg-transparent">
+        <a href="/dashboard/batches" class="btn btn-outline-dark w-100">Batches</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="card h-100 card-action shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title">📦 Evidence Packages</h5>
+        <p class="card-text text-muted">Download generated evidence packages (ZIP archives).</p>
+      </div>
+      <div class="card-footer bg-transparent">
+        <a href="/dashboard/packages" class="btn btn-outline-dark w-100">Packages</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="card h-100 card-action shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title">📖 API Docs</h5>
+        <p class="card-text text-muted">Interactive Swagger UI for the Stage 10 REST API.</p>
+      </div>
+      <div class="card-footer bg-transparent">
+        <a href="/docs" target="_blank" class="btn btn-outline-secondary w-100">Open Swagger</a>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

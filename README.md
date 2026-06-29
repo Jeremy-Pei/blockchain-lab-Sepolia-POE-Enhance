@@ -187,6 +187,9 @@ python -m proof_client.test_stage9
 # Stage 10: FastAPI evidence service endpoints (90 test cases)
 python -m api.test_stage10_api
 
+# Stage 11: Web evidence dashboard (78 test cases)
+python -m api.test_stage11_dashboard
+
 # Include on-chain tests (requires Sepolia ETH, consumes gas)
 python -m proof_client.test_all --chain
 ```
@@ -199,6 +202,7 @@ python -m proof_client.test_all --chain
 | Stage 8 (`test_stage8`) | 75 |
 | Stage 9 (`test_stage9`) | 84 |
 | Stage 10 (`api.test_stage10_api`) | 90 |
+| Stage 11 (`api.test_stage11_dashboard`) | 78 |
 
 ## Evidence Package (Stage 6)
 
@@ -389,6 +393,42 @@ merkle_batch_package_<date>_<short>/
 > ownership, or originality.
 
 📄 Full design: [docs/stage9_merkle_batch_registration.md](docs/stage9_merkle_batch_registration.md)
+
+## Web Evidence Dashboard (Stage 11)
+
+Stage 11 adds a **local browser-based dashboard** on top of the Stage 10
+FastAPI service.  The dashboard provides pages for file hashing, registration,
+verification, Merkle proof verification, evidence browsing, batch browsing, and
+package downloads — all without leaving the browser.
+
+```bash
+cd python-client
+PYTHONPATH=. .venv/bin/uvicorn api.main:app --reload
+```
+
+Open the dashboard:
+
+```
+http://127.0.0.1:8000/
+```
+
+Open API docs:
+
+```
+http://127.0.0.1:8000/docs
+```
+
+Run Stage 11 tests:
+
+```bash
+PYTHONPATH=. .venv/bin/python -m api.test_stage11_dashboard
+# Stage 11 Dashboard Tests: 78/78 passed
+```
+
+> ⚠️ **Local development only.** The dashboard does not implement
+> authentication. Do **not** expose it directly to the public internet.
+
+📄 Full design: [docs/stage11_web_dashboard.md](docs/stage11_web_dashboard.md)
 
 ## FastAPI Evidence Service (Stage 10)
 

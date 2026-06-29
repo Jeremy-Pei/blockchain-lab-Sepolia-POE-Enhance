@@ -17,19 +17,25 @@ adding authentication, rate limiting, input validation, and key-management
 hardening. See docs/stage10_fastapi_service.md.
 """
 
+from pathlib import Path
+
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from api import API_NAME, API_VERSION
 from api.routes_batches import router as batches_router
+from api.routes_dashboard import router as dashboard_router
 from api.routes_evidence import router as evidence_router
 from api.routes_files import router as files_router
 from api.routes_health import router as health_router
 from api.routes_packages import router as packages_router
 from api.routes_register import router as register_router
 from api.routes_verify import router as verify_router
+
+_WEB_DIR = Path(__file__).resolve().parents[1] / "web"
 
 app = FastAPI(
     title="Proof-of-Existence Evidence API",
@@ -74,8 +80,17 @@ async def validation_exception_handler(
     )
 
 
+# ── Static files ───────────────────────────────────────────────────
+
+app.mount(
+    "/static",
+    StaticFiles(directory=str(_WEB_DIR / "static")),
+    name="static",
+)
+
 # ── Routers ────────────────────────────────────────────────────────
 
+app.include_router(dashboard_router, tags=["Dashboard"])
 app.include_router(health_router, prefix="", tags=["Health"])
 app.include_router(files_router, prefix="/files", tags=["Files"])
 app.include_router(evidence_router, prefix="/evidence", tags=["Evidence"])

@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>📦 Evidence Packages</h2>
+<p class="text-muted">Download generated evidence ZIP archives.</p>
+
+{% if packages %}
+<div class="table-responsive">
+  <table class="table table-hover table-sm align-middle">
+    <thead class="table-dark">
+      <tr>
+        <th>Package Name</th>
+        <th>Size</th>
+        <th>Source</th>
+        <th>Download</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in packages %}
+      <tr>
+        <td class="hash-text">{{ p.name }}</td>
+        <td>{{ "%.1f"|format(p.size_bytes / 1024) }} KB</td>
+        <td>
+          {% if p.source == "batch" %}
+          <span class="badge bg-info text-dark">batch</span>
+          {% else %}
+          <span class="badge bg-primary">single</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if p.source == "single" %}
+          <a href="/packages/{{ p.name }}" class="btn btn-sm btn-outline-success">Download</a>
+          {% else %}
+          <span class="text-muted small">Use batch export endpoint</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="alert alert-info">No packages found.  Register a file and export its evidence package.</div>
+{% endif %}
+
+<a href="/" class="btn btn-outline-secondary mt-2">Back</a>
+{% endblock %}

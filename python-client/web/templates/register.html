@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>📝 Register Evidence</h2>
+<p class="text-muted">Upload a file to register its hash on the blockchain.</p>
+
+<div class="card shadow-sm">
+  <div class="card-body">
+    <form method="post" enctype="multipart/form-data" action="/dashboard/register" id="reg-form">
+      <div class="mb-3">
+        <label for="file" class="form-label fw-semibold">File <span class="text-danger">*</span></label>
+        <input type="file" class="form-control" id="file" name="file" required>
+      </div>
+      <div class="row mb-3">
+        <div class="col-md-4">
+          <label for="title" class="form-label">Title</label>
+          <input type="text" class="form-control" id="title" name="title" placeholder="My Document">
+        </div>
+        <div class="col-md-4">
+          <label for="author" class="form-label">Author</label>
+          <input type="text" class="form-control" id="author" name="author" placeholder="Alice">
+        </div>
+        <div class="col-md-4">
+          <label for="description" class="form-label">Description</label>
+          <input type="text" class="form-control" id="description" name="description" placeholder="Optional">
+        </div>
+      </div>
+      <div class="mb-3">
+        <label for="mode" class="form-label fw-semibold">Registration Mode</label>
+        <select class="form-select" id="mode" name="mode" onchange="togglePassword()">
+          <option value="normal" selected>Normal (on-chain only)</option>
+          <option value="ipfs">IPFS (upload to IPFS + register CID)</option>
+          <option value="encrypted_ipfs">Encrypted IPFS (encrypt → IPFS → register)</option>
+        </select>
+      </div>
+      <div class="mb-3" id="password-group" style="display:none;">
+        <label for="password" class="form-label fw-semibold">Encryption Password <span class="text-danger">*</span></label>
+        <input type="password" class="form-control" id="password" name="password" autocomplete="new-password">
+        <div class="form-text">Required for encrypted IPFS mode. Never stored or returned.</div>
+      </div>
+      <button type="submit" class="btn btn-success">Register</button>
+      <a href="/" class="btn btn-outline-secondary ms-2">Back</a>
+    </form>
+  </div>
+</div>
+
+<script>
+function togglePassword() {
+  const mode = document.getElementById('mode').value;
+  const pg = document.getElementById('password-group');
+  pg.style.display = (mode === 'encrypted_ipfs') ? '' : 'none';
+}
+</script>
+{% endblock %}
