@@ -36,6 +36,13 @@ class EvidenceRecord:
         default_factory=lambda: datetime.now(timezone.utc).isoformat()
     )
 
+    # ── Stage 12: multi-network fields ──
+    # network_key    → machine-readable key, e.g. "sepolia", "base_sepolia"
+    # explorer_base_url → e.g. "https://sepolia.etherscan.io"
+    # Backward-compatible: defaults to "" so old JSON/SQLite rows load cleanly.
+    network_key: str = ""
+    explorer_base_url: str = ""
+
     # ── IPFS off-chain storage (Stage 7) ──
     # Optional and defaulted, so older evidence JSON without these keys
     # still deserialises cleanly via from_dict().

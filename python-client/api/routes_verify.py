@@ -10,7 +10,10 @@ router = APIRouter()
 
 
 @router.post("/file")
-def verify_file_api(file: UploadFile = File(...)):
+def verify_file_api(
+    file: UploadFile = File(...),
+    network: str = Form(""),
+):
     """Verify whether an uploaded file's hash is registered on-chain."""
     if not file.filename:
         raise HTTPException(status_code=400, detail="Missing filename")
@@ -18,7 +21,7 @@ def verify_file_api(file: UploadFile = File(...)):
         saved_path = services.save_upload(file.file, file.filename)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
-    return services.verify_file_workflow(saved_path)
+    return services.verify_file_workflow(saved_path, network_key=network or None)
 
 
 @router.post("/merkle-proof")
@@ -26,6 +29,7 @@ def verify_merkle_proof_api(
     file: UploadFile = File(...),
     proof: UploadFile = File(...),
     chain: bool = Form(False),
+    network: str = Form(""),
 ):
     """Verify a file belongs to a registered Merkle batch using its proof JSON."""
     if not file.filename or not proof.filename:
@@ -36,5 +40,8 @@ def verify_merkle_proof_api(
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
     return services.verify_merkle_proof_workflow(
-        file_path=file_path, proof_path=proof_path, chain=chain
+        file_path=file_path,
+        proof_path=proof_path,
+        chain=chain,
+        network_key=network or None,
     )

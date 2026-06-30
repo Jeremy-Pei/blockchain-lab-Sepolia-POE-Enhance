@@ -16,6 +16,7 @@ from fastapi import APIRouter, File, Form, Request, UploadFile
 from fastapi.templating import Jinja2Templates
 
 from api import services
+from proof_client.network_config import get_default_network_config, list_network_configs
 
 _WEB_DIR = Path(__file__).resolve().parents[1] / "web"
 templates = Jinja2Templates(directory=str(_WEB_DIR / "templates"))
@@ -26,11 +27,36 @@ router = APIRouter()
 # ── Helpers ────────────────────────────────────────────────────────
 
 
+def _network_ctx() -> dict:
+    """Return minimal network info for template rendering."""
+    try:
+        cfg = get_default_network_config()
+        return {
+            "current_network_key": cfg.network_key,
+            "current_network_name": cfg.display_name,
+            "current_chain_id": cfg.chain_id,
+            "current_contract": cfg.contract_address,
+            "available_networks": [
+                {"key": c.network_key, "name": c.display_name}
+                for c in list_network_configs()
+            ],
+        }
+    except Exception:
+        return {
+            "current_network_key": "sepolia",
+            "current_network_name": "Ethereum Sepolia",
+            "current_chain_id": 11155111,
+            "current_contract": "",
+            "available_networks": [{"key": "sepolia", "name": "Ethereum Sepolia"}],
+        }
+
+
 def _render(request: Request, template: str, ctx: dict, status_code: int = 200):
+    merged = {**_network_ctx(), **ctx}
     return templates.TemplateResponse(
         request=request,
         name=template,
-        context=ctx,
+        context=merged,
         status_code=status_code,
     )
 
@@ -94,12 +120,15 @@ async def register_submit(
     description: str = Form(""),
     mode: str = Form("normal"),
     password: str = Form(""),
+    network: str = Form(""),
 ):
     try:
         saved = _save(file)
+        net_key = network or None
         if mode == "normal":
             result = services.register_file_workflow(
-                saved, title=title, author=author, description=description
+                saved, title=title, author=author, description=description,
+                network_key=net_key,
             )
         elif mode == "ipfs":
             result = services.register_file_workflow(
@@ -109,6 +138,7 @@ async def register_submit(
                 description=description,
                 upload_ipfs=True,
                 ipfs_provider="mock",
+                network_key=net_key,
             )
         elif mode == "encrypted_ipfs":
             if not password:
@@ -121,6 +151,7 @@ async def register_submit(
                 upload_ipfs=True,
                 encrypt_before_ipfs=True,
                 password=password,
+                network_key=net_key,
             )
         else:
             return _error(request, f"Unknown registration mode: {mode!r}")
@@ -142,10 +173,14 @@ def verify_page(request: Request):
 
 
 @router.post("/dashboard/verify")
-async def verify_submit(request: Request, file: UploadFile = File(...)):
+async def verify_submit(
+    request: Request,
+    file: UploadFile = File(...),
+    network: str = Form(""),
+):
     try:
         saved = _save(file)
-        result = services.verify_file_workflow(saved)
+        result = services.verify_file_workflow(saved, network_key=network or None)
         return _render(
             request, "result.html", {"title": "Verification Result", "result": result}
         )
@@ -167,6 +202,7 @@ async def verify_merkle_submit(
     file: UploadFile = File(...),
     proof: UploadFile = File(...),
     check_blockchain: str = Form(""),
+    network: str = Form(""),
 ):
     try:
         from proof_client import config as _cfg
@@ -174,7 +210,9 @@ async def verify_merkle_submit(
         saved_file = _save(file)
         saved_proof = _save(proof, dest_dir=_cfg.API_TEMP_DIR)
         chain = check_blockchain.lower() in ("on", "true", "1", "yes")
-        result = services.verify_merkle_proof_workflow(saved_file, saved_proof, chain=chain)
+        result = services.verify_merkle_proof_workflow(
+            saved_file, saved_proof, chain=chain, network_key=network or None
+        )
         return _render(
             request,
             "result.html",

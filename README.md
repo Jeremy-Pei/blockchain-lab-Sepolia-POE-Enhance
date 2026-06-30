@@ -190,6 +190,12 @@ python -m api.test_stage10_api
 # Stage 11: Web evidence dashboard (78 test cases)
 python -m api.test_stage11_dashboard
 
+# Stage 12: Multi-network support — core (90 test cases)
+python -m proof_client.test_stage12_networks
+
+# Stage 12: Multi-network support — API (55 test cases)
+python -m api.test_stage12_networks_api
+
 # Include on-chain tests (requires Sepolia ETH, consumes gas)
 python -m proof_client.test_all --chain
 ```
@@ -203,6 +209,8 @@ python -m proof_client.test_all --chain
 | Stage 9 (`test_stage9`) | 84 |
 | Stage 10 (`api.test_stage10_api`) | 90 |
 | Stage 11 (`api.test_stage11_dashboard`) | 78 |
+| Stage 12 core (`proof_client.test_stage12_networks`) | 90 |
+| Stage 12 API (`api.test_stage12_networks_api`) | 55 |
 
 ## Evidence Package (Stage 6)
 
@@ -429,6 +437,75 @@ PYTHONPATH=. .venv/bin/python -m api.test_stage11_dashboard
 > authentication. Do **not** expose it directly to the public internet.
 
 📄 Full design: [docs/stage11_web_dashboard.md](docs/stage11_web_dashboard.md)
+
+## Multi-Network Evidence Support (Stage 12)
+
+Stage 12 upgrades the system from Sepolia-only to a **network-aware evidence framework**. The CLI, API, and dashboard can all select any EVM-compatible network at registration and verification time.
+
+Supported networks out of the box:
+
+| Key            | Display Name      | Chain ID |
+|----------------|-------------------|----------|
+| `anvil`        | Anvil Local       | 31337    |
+| `sepolia`      | Ethereum Sepolia  | 11155111 |
+| `base_sepolia` | Base Sepolia      | 84532    |
+
+### Environment Setup
+
+```bash
+# .env
+DEFAULT_NETWORK=sepolia
+SEPOLIA_RPC_URL=https://eth-sepolia.g.alchemy.com/v2/YOUR_KEY
+SEPOLIA_CONTRACT_ADDRESS=0x...
+ANVIL_RPC_URL=http://127.0.0.1:8545
+ANVIL_CONTRACT_ADDRESS=0x...
+BASE_SEPOLIA_RPC_URL=https://base-sepolia.g.alchemy.com/v2/YOUR_KEY
+BASE_SEPOLIA_CONTRACT_ADDRESS=0x...
+```
+
+### CLI Usage
+
+```bash
+# Register on Anvil (local dev)
+python -m proof_client.register_file paper.pdf --network anvil
+
+# Register on Base Sepolia
+python -m proof_client.register_file paper.pdf --network base-sepolia
+
+# Verify — uses stored network_key from evidence record
+python -m proof_client.verify_file paper.pdf
+
+# Batch register on Anvil
+python -m proof_client.batch_merkle_register works/ --network anvil
+```
+
+### API Network Endpoints
+
+```
+GET /networks              → list all enabled networks
+GET /networks/current      → current default network
+GET /networks/{key}        → single network info (404 if unknown)
+```
+
+All existing endpoints accept an optional `network` form field.
+
+### Run Stage 12 Tests
+
+```bash
+PYTHONPATH=. .venv/bin/python -m proof_client.test_stage12_networks
+# Stage 12 Results: 90/90 passed, 0 failed
+
+PYTHONPATH=. .venv/bin/python -m api.test_stage12_networks_api
+# Stage 12 API Results: 55/55 passed, 0 failed
+```
+
+### Adding a New Network
+
+1. Create `python-client/networks/my_chain.json`
+2. Set `MY_CHAIN_RPC_URL` and `MY_CHAIN_CONTRACT_ADDRESS` in `.env`
+3. The system discovers the file at startup — no code changes needed
+
+📄 Full design: [docs/stage12_multi_network_support.md](docs/stage12_multi_network_support.md)
 
 ## FastAPI Evidence Service (Stage 10)
 

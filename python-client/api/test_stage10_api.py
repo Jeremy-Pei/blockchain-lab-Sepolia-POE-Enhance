@@ -104,17 +104,21 @@ _MOCK_TX = {
     "block_number": 123456,
     "gas_used": 21000,
     "status": "success",
+    "contract_address": "",
+    "network_key": None,
 }
 _MOCK_ADDRESS = "0x000000000000000000000000000000000000dEaD"
 
 
 def _install_register_mock():
-    register_mod.register_hash = lambda file_hash, uri: dict(_MOCK_TX)
+    # Stage 12: register_hash now accepts an optional network_key kwarg.
+    register_mod.register_hash = lambda file_hash, uri, network_key=None: dict(_MOCK_TX)
     register_mod.get_address = lambda: _MOCK_ADDRESS
 
 
 def _install_verify_mock(registered: bool):
-    def _vh(file_hash):
+    # Stage 12: verify_hash now accepts an optional network_key kwarg.
+    def _vh(file_hash, network_key=None):
         return {
             "owner": _MOCK_ADDRESS,
             "timestamp": 1700000000 if registered else 0,
@@ -411,7 +415,8 @@ def test_batches():
     check("T55 batch register invalid folder → 400", r.status_code == 400)
 
     # Register happy path with the batch pipeline mocked
-    def _fake_run(folder, title="", author="", description="", recursive=False, dry_run=False):
+    # Stage 12: run_batch_registration now accepts an optional network_key kwarg.
+    def _fake_run(folder, title="", author="", description="", recursive=False, dry_run=False, network_key=None):
         return {
             "batch_id": "batch-xyz",
             "merkle_root": "0xroot",

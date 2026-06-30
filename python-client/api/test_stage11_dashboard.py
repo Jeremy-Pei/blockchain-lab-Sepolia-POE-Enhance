@@ -98,17 +98,21 @@ _MOCK_TX = {
     "block_number": 999999,
     "gas_used": 30000,
     "status": "success",
+    "contract_address": "",
+    "network_key": None,
 }
 _MOCK_ADDR = "0x000000000000000000000000000000000000dEaD"
 
 
 def _install_register_mock():
-    register_mod.register_hash = lambda file_hash, uri: dict(_MOCK_TX)
+    # Stage 12: register_hash now accepts an optional network_key kwarg.
+    register_mod.register_hash = lambda file_hash, uri, network_key=None: dict(_MOCK_TX)
     register_mod.get_address = lambda: _MOCK_ADDR
 
 
 def _install_verify_mock(registered: bool):
-    def _vh(file_hash):
+    # Stage 12: verify_hash now accepts an optional network_key kwarg.
+    def _vh(file_hash, network_key=None):
         return {
             "owner": _MOCK_ADDR,
             "timestamp": 1700000000 if registered else 0,

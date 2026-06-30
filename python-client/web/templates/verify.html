@@ -10,6 +10,21 @@
         <label for="file" class="form-label fw-semibold">File <span class="text-danger">*</span></label>
         <input type="file" class="form-control" id="file" name="file" required>
       </div>
+      <div class="mb-3">
+        <label for="network" class="form-label fw-semibold">Network</label>
+        <select class="form-select" id="network" name="network">
+          {% if available_networks %}
+            {% for n in available_networks %}
+            <option value="{{ n.key }}"{% if n.key == current_network_key %} selected{% endif %}>{{ n.name }}</option>
+            {% endfor %}
+          {% else %}
+            <option value="sepolia" selected>Ethereum Sepolia</option>
+            <option value="anvil">Anvil Local</option>
+            <option value="base_sepolia">Base Sepolia</option>
+          {% endif %}
+        </select>
+        <div class="form-text">If evidence was registered on a specific network, select it here. If the evidence record contains a network, that takes priority.</div>
+      </div>
       <button type="submit" class="btn btn-info text-white">Verify</button>
       <a href="/" class="btn btn-outline-secondary ms-2">Back</a>
     </form>

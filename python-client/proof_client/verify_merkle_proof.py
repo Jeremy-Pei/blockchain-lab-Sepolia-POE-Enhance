@@ -64,13 +64,19 @@ def verify_file_against_proof(
     return ok, details
 
 
-def verify_on_chain(merkle_root: str) -> tuple[bool, dict]:
+def verify_on_chain(
+    merkle_root: str,
+    network_key: str | None = None,
+) -> tuple[bool, dict]:
     """
     Call contract.verify(merkle_root) and return (registered, info).
+
+    When network_key is None the function uses the network from the proof JSON
+    (passed in by the caller) or falls back to the DEFAULT_NETWORK env var.
     """
     try:
         from proof_client.contract_client import verify_hash
-        result = verify_hash(merkle_root)
+        result = verify_hash(merkle_root, network_key=network_key)
         return result.get("registered", False), result
     except Exception as e:
         return False, {"error": str(e)}
@@ -87,6 +93,9 @@ def _parse_args(argv=None):
     parser.add_argument("--proof", required=True, help="Path to the .proof.json file")
     parser.add_argument("--chain", action="store_true",
                         help="Also verify the Merkle root is registered on-chain")
+    parser.add_argument("--network", default=None,
+                        help="Network key for on-chain verification, e.g. sepolia. "
+                        "Defaults to network_key in the proof JSON, then DEFAULT_NETWORK.")
     return parser.parse_args(argv)
 
 
@@ -127,8 +136,10 @@ def main(argv=None) -> int:
     chain_ok = None
     if args.chain:
         merkle_root = proof_json.get("merkle_root", "")
+        # Network resolution: explicit --network > proof JSON network_key > DEFAULT_NETWORK
+        chain_network = args.network or proof_json.get("network_key") or None
         print("\nQuerying blockchain …")
-        chain_ok, chain_info = verify_on_chain(merkle_root)
+        chain_ok, chain_info = verify_on_chain(merkle_root, network_key=chain_network)
         if "error" in chain_info:
             print(f"Chain query error: {chain_info['error']}")
             chain_ok = False

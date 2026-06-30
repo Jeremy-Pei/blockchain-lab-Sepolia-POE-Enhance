@@ -25,7 +25,12 @@
           <button class="btn btn-outline-secondary btn-sm py-0 px-1"
                   onclick="copyText('fh-{{ loop.index }}', '{{ r.file_hash }}')">Copy</button>
         </td>
-        <td><span class="badge bg-secondary">{{ r.network }}</span></td>
+        <td>
+          <span class="badge bg-secondary">{{ r.network }}</span>
+          {% if r.network_key %}
+          <br><small class="text-muted">{{ r.network_key }}</small>
+          {% endif %}
+        </td>
         <td class="hash-text">{{ (r.tx_hash or "")[:12] }}{% if r.tx_hash %}…{% endif %}</td>
         <td>{{ (r.created_at or "")[:19] }}</td>
         <td>

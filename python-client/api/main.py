@@ -31,6 +31,7 @@ from api.routes_dashboard import router as dashboard_router
 from api.routes_evidence import router as evidence_router
 from api.routes_files import router as files_router
 from api.routes_health import router as health_router
+from api.routes_networks import router as networks_router
 from api.routes_packages import router as packages_router
 from api.routes_register import router as register_router
 from api.routes_verify import router as verify_router
@@ -98,3 +99,4 @@ app.include_router(register_router, prefix="/register", tags=["Register"])
 app.include_router(verify_router, prefix="/verify", tags=["Verify"])
 app.include_router(packages_router, prefix="/packages", tags=["Packages"])
 app.include_router(batches_router, prefix="/batches", tags=["Batches"])
+app.include_router(networks_router, prefix="/networks", tags=["Networks"])

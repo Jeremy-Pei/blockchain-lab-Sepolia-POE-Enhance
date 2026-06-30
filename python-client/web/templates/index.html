@@ -5,9 +5,19 @@
   <p class="lead text-muted">
     A local dashboard for blockchain-based evidence registration, verification, and packaging.
   </p>
-  <div class="alert alert-warning d-inline-block mt-2" role="alert">
+  <div class="alert alert-warning d-inline-block mt-2 me-2" role="alert">
     ⚠️ Local development only — do not expose to the public internet.
   </div>
+  {% if current_network_name %}
+  <div class="d-inline-block">
+    <span class="badge bg-secondary fs-6 me-1">Network:</span>
+    <span class="badge bg-info text-dark fs-6">{{ current_network_name }}</span>
+    <span class="badge bg-light text-muted fs-6 ms-1">Chain ID {{ current_chain_id }}</span>
+    {% if current_contract %}
+    <div class="mt-1 text-muted small">Contract: <code>{{ current_contract[:10] }}…{{ current_contract[-6:] }}</code></div>
+    {% endif %}
+  </div>
+  {% endif %}
 </div>
 
 <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4">

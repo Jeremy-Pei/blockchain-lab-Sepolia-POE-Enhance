@@ -32,6 +32,7 @@ def register_file_api(
     title: str = Form(""),
     author: str = Form(""),
     description: str = Form(""),
+    network: str = Form(""),
 ):
     """Register a file's hash on-chain (no off-chain upload)."""
     saved_path = _save_or_400(file)
@@ -42,6 +43,7 @@ def register_file_api(
         description=description,
         upload_ipfs=False,
         encrypt_before_ipfs=False,
+        network_key=network or None,
     )
 
 
@@ -52,6 +54,7 @@ def register_file_ipfs_api(
     author: str = Form(""),
     description: str = Form(""),
     ipfs_provider: str = Form("mock"),
+    network: str = Form(""),
 ):
     """Upload the plaintext file to IPFS, then register ipfs://<cid> on-chain."""
     saved_path = _save_or_400(file)
@@ -63,6 +66,7 @@ def register_file_ipfs_api(
         upload_ipfs=True,
         ipfs_provider=ipfs_provider,
         encrypt_before_ipfs=False,
+        network_key=network or None,
     )
 
 
@@ -74,6 +78,7 @@ def register_file_encrypted_ipfs_api(
     author: str = Form(""),
     description: str = Form(""),
     ipfs_provider: str = Form("mock"),
+    network: str = Form(""),
 ):
     """Encrypt the file locally, upload only the ciphertext to IPFS, register."""
     if not password:
@@ -88,6 +93,7 @@ def register_file_encrypted_ipfs_api(
         ipfs_provider=ipfs_provider,
         encrypt_before_ipfs=True,
         password=password,
+        network_key=network or None,
     )
     # Belt-and-suspenders: never return the password.
     result.pop("password", None)

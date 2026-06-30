@@ -22,6 +22,7 @@ def register_merkle_batch_api(
     description: str = Form(""),
     recursive: bool = Form(False),
     dry_run: bool = Form(False),
+    network: str = Form(""),
 ):
     """Build a Merkle tree over a local folder and register its root on-chain."""
     folder = Path(folder_path)
@@ -35,6 +36,7 @@ def register_merkle_batch_api(
             description=description,
             recursive=recursive,
             dry_run=dry_run,
+            network_key=network or None,
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
@@ -45,6 +47,7 @@ def verify_merkle_batch_api(
     file: UploadFile = File(...),
     proof: UploadFile = File(...),
     chain: bool = Form(False),
+    network: str = Form(""),
 ):
     """Verify a file belongs to a registered Merkle batch using its proof JSON."""
     if not file.filename or not proof.filename:
@@ -55,7 +58,10 @@ def verify_merkle_batch_api(
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
     return services.verify_merkle_proof_workflow(
-        file_path=file_path, proof_path=proof_path, chain=chain
+        file_path=file_path,
+        proof_path=proof_path,
+        chain=chain,
+        network_key=network or None,
     )
 
 

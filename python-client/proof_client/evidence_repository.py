@@ -82,6 +82,12 @@ _ENCRYPTION_COLUMNS = (
     ("encrypted_ipfs_uploaded_at", "TEXT DEFAULT ''"),
 )
 
+# Stage 12 multi-network columns (migrated in on existing databases).
+_NETWORK_COLUMNS = (
+    ("network_key", "TEXT DEFAULT ''"),
+    ("explorer_base_url", "TEXT DEFAULT ''"),
+)
+
 
 def ensure_column(
     conn: sqlite3.Connection,
@@ -104,8 +110,8 @@ def ensure_column(
 
 
 def _migrate(conn: sqlite3.Connection) -> None:
-    """Add any columns missing from a pre-Stage-7 / pre-Stage-8 database."""
-    for col, col_def in (*_IPFS_COLUMNS, *_ENCRYPTION_COLUMNS):
+    """Add any columns missing from a pre-Stage-7 / pre-Stage-8 / pre-Stage-12 database."""
+    for col, col_def in (*_IPFS_COLUMNS, *_ENCRYPTION_COLUMNS, *_NETWORK_COLUMNS):
         ensure_column(conn, "evidence", col, col_def)
 
 
@@ -233,6 +239,18 @@ CREATE TABLE IF NOT EXISTS batch_evidence_records (
 """
 
 
+_BATCH_NETWORK_COLUMNS = (
+    ("network_key", "TEXT DEFAULT ''"),
+    ("explorer_base_url", "TEXT DEFAULT ''"),
+)
+
+
+def _migrate_batch(conn: sqlite3.Connection) -> None:
+    """Add Stage 12 network columns to batch_evidence_records if missing."""
+    for col, col_def in _BATCH_NETWORK_COLUMNS:
+        ensure_column(conn, "batch_evidence_records", col, col_def)
+
+
 def _get_batch_conn(db_path: Path | None = None) -> sqlite3.Connection:
     """Open a database connection and ensure the batch table exists."""
     conn = sqlite3.connect(str(db_path or DB_PATH))
@@ -240,6 +258,7 @@ def _get_batch_conn(db_path: Path | None = None) -> sqlite3.Connection:
     conn.execute(_CREATE_TABLE_SQL)
     _migrate(conn)
     conn.execute(_CREATE_BATCH_TABLE_SQL)
+    _migrate_batch(conn)
     conn.commit()
     return conn
 

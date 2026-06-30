@@ -1,0 +1,13 @@
+{
+  "network_key": "base_sepolia",
+  "display_name": "Base Sepolia",
+  "chain_id": 84532,
+  "rpc_url_env_key": "BASE_SEPOLIA_RPC_URL",
+  "explorer_base_url": "https://sepolia.basescan.org",
+  "explorer_tx_url_template": "https://sepolia.basescan.org/tx/{tx_hash}",
+  "explorer_address_url_template": "https://sepolia.basescan.org/address/{address}",
+  "native_token_symbol": "ETH",
+  "is_testnet": true,
+  "contract_address_env_key": "BASE_SEPOLIA_CONTRACT_ADDRESS",
+  "enabled": true
+}

@@ -1,0 +1,13 @@
+{
+  "network_key": "anvil",
+  "display_name": "Anvil Local",
+  "chain_id": 31337,
+  "rpc_url_env_key": "ANVIL_RPC_URL",
+  "explorer_base_url": "",
+  "explorer_tx_url_template": "",
+  "explorer_address_url_template": "",
+  "native_token_symbol": "ETH",
+  "is_testnet": true,
+  "contract_address_env_key": "ANVIL_CONTRACT_ADDRESS",
+  "enabled": true
+}

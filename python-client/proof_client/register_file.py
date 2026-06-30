@@ -26,6 +26,11 @@ from proof_client.encrypt_file import write_metadata as _write_enc_metadata
 from proof_client.crypto_utils import EncryptionResult
 from proof_client.ipfs_client import get_client
 from proof_client import evidence_repository as repo
+from proof_client.network_config import (
+    get_default_network_key,
+    load_network_config,
+    normalize_network_key,
+)
 
 
 def register_file(
@@ -36,6 +41,7 @@ def register_file(
     encrypt_before_ipfs: bool = False,
     password: str | None = None,
     note: str | None = None,
+    network_key: str | None = None,
 ) -> EvidenceRecord:
     """
     Register a single file on the blockchain.
@@ -118,16 +124,44 @@ def register_file(
         if not explicit_uri:
             uri = ipfs_result.uri
 
+    # Resolve network config (Stage 12)
+    resolved_key = normalize_network_key(network_key) if network_key else get_default_network_key()
+    try:
+        net_cfg = load_network_config(resolved_key)
+    except ValueError:
+        net_cfg = None
+
     if uri is None:
-        uri = f"sepolia://{file_name}"
+        uri = f"{resolved_key}://{file_name}"
 
     # 3) Call contract
-    print("⏳ Submitting to Sepolia...")
-    result = register_hash(file_hash, uri)
+    net_label = net_cfg.display_name if net_cfg else resolved_key
+    print(f"⏳ Submitting to {net_label}...")
+    result = register_hash(file_hash, uri, network_key=network_key)
     print("✅ Transaction successful!")
     print(f"   Tx Hash: 0x{result['tx_hash']}")
     print(f"   Block:   {result['block_number']}")
     print(f"   Gas:     {result['gas_used']}")
+
+    # Resolve network-specific values for the evidence record
+    used_contract = result.get("contract_address") or CONTRACT_ADDRESS
+    if net_cfg:
+        used_network = net_cfg.display_name
+        used_chain_id = net_cfg.chain_id
+        # Store the base path (without the tx hash) so EvidenceRecord.explorer_link
+        # can append the tx hash in the same way the legacy EXPLORER_TX_URL did.
+        if net_cfg.explorer_tx_url_template:
+            used_explorer_tx_url = net_cfg.explorer_tx_url_template.replace("{tx_hash}", "")
+        else:
+            used_explorer_tx_url = ""
+        used_explorer_base = net_cfg.explorer_base_url
+        used_network_key = net_cfg.network_key
+    else:
+        used_network = "Ethereum Sepolia"
+        used_chain_id = 11155111
+        used_explorer_tx_url = EXPLORER_TX_URL
+        used_explorer_base = ""
+        used_network_key = resolved_key
 
     # 4) Build evidence record
     record = EvidenceRecord(
@@ -139,8 +173,12 @@ def register_file(
         gas_used=result["gas_used"],
         owner=get_address(),
         status=result["status"],
-        contract_address=CONTRACT_ADDRESS,
-        explorer_tx_url=EXPLORER_TX_URL,
+        network=used_network,
+        chain_id=used_chain_id,
+        contract_address=used_contract,
+        explorer_tx_url=used_explorer_tx_url,
+        network_key=used_network_key,
+        explorer_base_url=used_explorer_base,
         note=note,
     )
 
@@ -212,6 +250,12 @@ def _parse_args(argv: list[str]) -> argparse.Namespace:
         help="Encrypt the file locally and upload only the ciphertext to IPFS "
         "(requires --upload-ipfs). The original file hash is still registered.",
     )
+    parser.add_argument(
+        "--network",
+        default=None,
+        help="Network key to use, e.g. anvil, sepolia, base-sepolia "
+        "(default: DEFAULT_NETWORK env var, or sepolia)",
+    )
     return parser.parse_args(argv)
 
 
@@ -225,6 +269,7 @@ if __name__ == "__main__":
             upload_ipfs=args.upload_ipfs,
             ipfs_provider=args.ipfs_provider,
             encrypt_before_ipfs=args.encrypt_before_ipfs,
+            network_key=args.network,
         )
     except ValueError as exc:
         print(f"❌ {exc}")

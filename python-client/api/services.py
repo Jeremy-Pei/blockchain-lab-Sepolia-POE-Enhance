@@ -113,6 +113,7 @@ def register_file_workflow(
     ipfs_provider: Optional[str] = None,
     encrypt_before_ipfs: bool = False,
     password: Optional[str] = None,
+    network_key: Optional[str] = None,
 ) -> dict:
     """Register a single file on-chain and return a public response dict.
 
@@ -131,6 +132,7 @@ def register_file_workflow(
         encrypt_before_ipfs=encrypt_before_ipfs,
         password=password,
         note=note,
+        network_key=network_key or None,
     )
     response = _record_to_register_response(record)
     # Defensive: ensure no secret ever leaks back to the caller.
@@ -141,11 +143,14 @@ def register_file_workflow(
 # ── Verification ───────────────────────────────────────────────────
 
 
-def verify_file_workflow(file_path: Path) -> dict:
+def verify_file_workflow(
+    file_path: Path,
+    network_key: Optional[str] = None,
+) -> dict:
     """Verify a file against the chain + local evidence; return a dict."""
     from proof_client.verify_file import verify_file
 
-    result = verify_file(str(file_path))
+    result = verify_file(str(file_path), network_key=network_key or None)
     registered = bool(result.get("registered"))
     local = result.get("local_evidence")
     local_dict = local.to_dict() if local is not None else None
@@ -173,6 +178,7 @@ def verify_merkle_proof_workflow(
     file_path: Path,
     proof_path: Path,
     chain: bool = False,
+    network_key: Optional[str] = None,
 ) -> dict:
     """Verify a file against a Merkle proof JSON (optionally on-chain)."""
     from proof_client.verify_merkle_proof import (
@@ -196,7 +202,8 @@ def verify_merkle_proof_workflow(
     chain_info: dict[str, Any] = {}
     if chain:
         merkle_root = proof_json.get("merkle_root", "")
-        chain_ok, chain_info = verify_on_chain(merkle_root)
+        chain_net = network_key or proof_json.get("network_key") or None
+        chain_ok, chain_info = verify_on_chain(merkle_root, network_key=chain_net)
         details["chain_verification"] = "PASSED" if chain_ok else "FAILED"
         details["chain_info"] = chain_info
 
@@ -268,6 +275,7 @@ def batch_merkle_register_workflow(
     description: str = "",
     recursive: bool = False,
     dry_run: bool = False,
+    network_key: Optional[str] = None,
 ) -> dict:
     """Run a batch Merkle registration over a local folder."""
     from proof_client.batch_merkle_register import run_batch_registration
@@ -279,6 +287,7 @@ def batch_merkle_register_workflow(
         description=description,
         recursive=recursive,
         dry_run=dry_run,
+        network_key=network_key or None,
     )
     # Normalise any Path values to strings for JSON serialisation.
     normalised = {

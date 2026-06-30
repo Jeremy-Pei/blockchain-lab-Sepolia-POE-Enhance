@@ -25,6 +25,21 @@
         </div>
       </div>
       <div class="mb-3">
+        <label for="network" class="form-label fw-semibold">Network</label>
+        <select class="form-select" id="network" name="network">
+          {% if available_networks %}
+            {% for n in available_networks %}
+            <option value="{{ n.key }}"{% if n.key == current_network_key %} selected{% endif %}>{{ n.name }}</option>
+            {% endfor %}
+          {% else %}
+            <option value="sepolia" selected>Ethereum Sepolia</option>
+            <option value="anvil">Anvil Local</option>
+            <option value="base_sepolia">Base Sepolia</option>
+          {% endif %}
+        </select>
+        <div class="form-text">Select which blockchain network to register on.</div>
+      </div>
+      <div class="mb-3">
         <label for="mode" class="form-label fw-semibold">Registration Mode</label>
         <select class="form-select" id="mode" name="mode" onchange="togglePassword()">
           <option value="normal" selected>Normal (on-chain only)</option>

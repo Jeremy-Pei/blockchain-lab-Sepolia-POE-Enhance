@@ -78,6 +78,10 @@ class BatchEvidence:
     block_timestamp: int = 0
     explorer_url: str = ""
 
+    # Stage 12: multi-network fields (backward-compatible defaults)
+    network_key: str = ""
+    explorer_base_url: str = ""
+
     created_at_utc: str = field(
         default_factory=lambda: datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     )
@@ -152,6 +156,7 @@ def write_proof_json(
     batch_id: str,
     leaf_hashes: list[str],
     tx_result: Optional[dict] = None,
+    evidence: Optional["BatchEvidence"] = None,
 ) -> Path:
     """
     Generate and write the proof JSON for a single leaf.
@@ -164,6 +169,8 @@ def write_proof_json(
         leaf_hashes: Full list of leaf hashes in sorted order.
         tx_result: Optional dict from contract_client.register_hash; if None
                    the on-chain fields are left as empty strings.
+        evidence: Optional BatchEvidence; used to copy network fields into the
+                  proof so verifiers know which chain to query (Stage 12).
 
     Returns:
         Path to the written proof JSON file.
@@ -181,6 +188,19 @@ def write_proof_json(
         base = EXPLORER_TX_URL.rstrip("/")
         explorer_url = f"{base}/{tx_hash}"
 
+    # Stage 12: prefer network info from BatchEvidence when available.
+    net_display = evidence.network if evidence else "Ethereum Sepolia"
+    net_chain_id = evidence.chain_id if evidence else CHAIN_ID
+    net_contract = evidence.contract_address if evidence else CONTRACT_ADDRESS
+    net_key = evidence.network_key if evidence else ""
+    net_explorer_base = evidence.explorer_base_url if evidence else ""
+    if evidence and evidence.explorer_url:
+        explorer_url = evidence.explorer_url
+    elif tx_hash:
+        # build from explorer_base_url if available
+        if net_explorer_base:
+            explorer_url = f"{net_explorer_base.rstrip('/')}/tx/{tx_hash}"
+
     proof_data = {
         "proof_type": "merkle_file_proof",
         "batch_id": batch_id,
@@ -190,9 +210,10 @@ def write_proof_json(
         "merkle_root": merkle_root,
         "leaf_index": leaf.index,
         "proof": proof_steps,
-        "network": "Ethereum Sepolia",
-        "chain_id": CHAIN_ID,
-        "contract_address": CONTRACT_ADDRESS,
+        "network": net_display,
+        "network_key": net_key,
+        "chain_id": net_chain_id,
+        "contract_address": net_contract,
         "transaction_hash": tx_hash,
         "explorer_url": explorer_url,
     }
@@ -287,7 +308,10 @@ def build_batch_evidence_files(
     # Write per-file proofs.
     proof_files = []
     for leaf in leaves:
-        pf = write_proof_json(proofs_dir, leaf, evidence.merkle_root, batch_id, leaf_hashes, tx_result)
+        pf = write_proof_json(
+            proofs_dir, leaf, evidence.merkle_root, batch_id, leaf_hashes,
+            tx_result, evidence=evidence,
+        )
         proof_files.append(pf)
 
     return {

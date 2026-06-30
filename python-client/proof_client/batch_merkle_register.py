@@ -31,6 +31,11 @@ from proof_client.config import (
     EXPLORER_TX_URL,
     WORKS_DIR,
 )
+from proof_client.network_config import (
+    get_default_network_key,
+    load_network_config,
+    normalize_network_key,
+)
 from proof_client.merkle_evidence import (
     BatchEvidence,
     MerkleLeaf,
@@ -420,6 +425,7 @@ def run_batch_registration(
     description: str = "",
     recursive: bool = False,
     dry_run: bool = False,
+    network_key: str | None = None,
 ) -> dict:
     """
     Full batch Merkle registration flow.
@@ -457,18 +463,31 @@ def run_batch_registration(
     block_timestamp = 0
     explorer_url = ""
 
+    # Resolve network config (Stage 12)
+    resolved_key = normalize_network_key(network_key) if network_key else get_default_network_key()
+    try:
+        net_cfg = load_network_config(resolved_key)
+    except ValueError:
+        net_cfg = None
+
     if not dry_run:
         from proof_client.contract_client import register_hash, verify_hash
-        from proof_client.wallet import get_account, get_w3
+        from proof_client.wallet import get_account
 
-        print("\nRegistering Merkle root on-chain …")
-        tx_result = register_hash(merkle_root, uri)
+        print(f"\nRegistering Merkle root on-chain ({net_cfg.display_name if net_cfg else resolved_key}) …")
+        tx_result = register_hash(merkle_root, uri, network_key=network_key)
         print(f"Transaction hash: {tx_result['tx_hash']}")
         print(f"Block number: {tx_result['block_number']}")
 
-        w3 = get_w3()
+        # Fetch block timestamp using the right Web3 provider
+        if net_cfg:
+            from web3 import Web3
+            w3_net = Web3(Web3.HTTPProvider(net_cfg.rpc_url))
+        else:
+            from proof_client.wallet import get_w3
+            w3_net = get_w3()
         try:
-            block = w3.eth.get_block(tx_result["block_number"])
+            block = w3_net.eth.get_block(tx_result["block_number"])
             block_timestamp = block.timestamp
         except Exception:
             block_timestamp = 0
@@ -479,13 +498,22 @@ def run_batch_registration(
         tx_hash_clean = tx_result["tx_hash"]
         if not tx_hash_clean.startswith("0x"):
             tx_hash_clean = "0x" + tx_hash_clean
-        base = EXPLORER_TX_URL.rstrip("/")
-        explorer_url = f"{base}/{tx_hash_clean}"
+        if net_cfg and net_cfg.explorer_base_url:
+            explorer_url = f"{net_cfg.explorer_base_url.rstrip('/')}/tx/{tx_hash_clean}"
+        else:
+            base = EXPLORER_TX_URL.rstrip("/")
+            explorer_url = f"{base}/{tx_hash_clean}"
         print(f"Explorer: {explorer_url}")
     else:
         print("\n[DRY RUN] Skipping on-chain registration.")
 
     # 6. Build BatchEvidence.
+    used_network = net_cfg.display_name if net_cfg else "Ethereum Sepolia"
+    used_chain_id = net_cfg.chain_id if net_cfg else 11155111
+    used_contract = (tx_result.get("contract_address") if tx_result else None) or CONTRACT_ADDRESS
+    used_explorer_base = net_cfg.explorer_base_url if net_cfg else ""
+    used_network_key = net_cfg.network_key if net_cfg else resolved_key
+
     evidence = BatchEvidence(
         batch_id=batch_id,
         batch_title=title,
@@ -499,7 +527,11 @@ def run_batch_registration(
         block_number=tx_result["block_number"] if tx_result else 0,
         block_timestamp=block_timestamp,
         explorer_url=explorer_url,
-        contract_address=CONTRACT_ADDRESS,
+        contract_address=used_contract,
+        network=used_network,
+        chain_id=used_chain_id,
+        network_key=used_network_key,
+        explorer_base_url=used_explorer_base,
     )
 
     # 7. Write evidence files.
@@ -520,9 +552,10 @@ def run_batch_registration(
     # 9. Insert into SQLite.
     from proof_client.evidence_repository import insert_batch_evidence
     import json as _json
+    ev_dict = evidence.to_dict()
     insert_batch_evidence({
-        **evidence.to_dict(),
-        "batch_evidence_json": _json.dumps(evidence.to_dict()),
+        **ev_dict,
+        "batch_evidence_json": _json.dumps(ev_dict),
     })
 
     # 10. Build package.
@@ -568,6 +601,9 @@ def _parse_args(argv=None):
                         help="Recurse into sub-directories")
     parser.add_argument("--dry-run",     action="store_true",
                         help="Build tree and evidence without blockchain transaction")
+    parser.add_argument("--network",     default=None,
+                        help="Network key, e.g. anvil, sepolia, base-sepolia "
+                        "(default: DEFAULT_NETWORK env var, or sepolia)")
     return parser.parse_args(argv)
 
 
@@ -586,6 +622,7 @@ if __name__ == "__main__":
             description=args.description,
             recursive=args.recursive,
             dry_run=args.dry_run,
+            network_key=args.network,
         )
     except ValueError as e:
         print(f"Error: {e}", file=sys.stderr)

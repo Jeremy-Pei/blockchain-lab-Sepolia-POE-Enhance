@@ -15,6 +15,21 @@
         <input type="file" class="form-control" id="proof" name="proof" accept=".json" required>
         <div class="form-text">The <code>*.proof.json</code> file generated during batch registration.</div>
       </div>
+      <div class="mb-3">
+        <label for="network" class="form-label fw-semibold">Network (for on-chain verification)</label>
+        <select class="form-select" id="network" name="network">
+          {% if available_networks %}
+            {% for n in available_networks %}
+            <option value="{{ n.key }}"{% if n.key == current_network_key %} selected{% endif %}>{{ n.name }}</option>
+            {% endfor %}
+          {% else %}
+            <option value="sepolia" selected>Ethereum Sepolia</option>
+            <option value="anvil">Anvil Local</option>
+            <option value="base_sepolia">Base Sepolia</option>
+          {% endif %}
+        </select>
+        <div class="form-text">Only used when "Also verify on-chain" is checked. The proof JSON's network_key takes priority.</div>
+      </div>
       <div class="form-check mb-3">
         <input class="form-check-input" type="checkbox" id="check_blockchain" name="check_blockchain" value="on">
         <label class="form-check-label" for="check_blockchain">

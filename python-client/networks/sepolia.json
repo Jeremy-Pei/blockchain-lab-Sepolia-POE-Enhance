@@ -1,0 +1,13 @@
+{
+  "network_key": "sepolia",
+  "display_name": "Ethereum Sepolia",
+  "chain_id": 11155111,
+  "rpc_url_env_key": "SEPOLIA_RPC_URL",
+  "explorer_base_url": "https://sepolia.etherscan.io",
+  "explorer_tx_url_template": "https://sepolia.etherscan.io/tx/{tx_hash}",
+  "explorer_address_url_template": "https://sepolia.etherscan.io/address/{address}",
+  "native_token_symbol": "ETH",
+  "is_testnet": true,
+  "contract_address_env_key": "SEPOLIA_CONTRACT_ADDRESS",
+  "enabled": true
+}
