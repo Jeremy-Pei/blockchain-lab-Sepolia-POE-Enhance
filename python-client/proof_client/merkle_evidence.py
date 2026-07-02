@@ -82,6 +82,16 @@ class BatchEvidence:
     network_key: str = ""
     explorer_base_url: str = ""
 
+    # Stage 13: gas cost fields — one transaction amortised over file_count
+    # files, so cost_per_file = total_fee / file_count.
+    gas_used: int = 0
+    effective_gas_price_wei: int = 0
+    total_fee_wei: int = 0
+    total_fee_eth: str = ""
+    cost_per_file_wei: int = 0
+    cost_per_file_eth: str = ""
+    native_token_symbol: str = ""
+
     created_at_utc: str = field(
         default_factory=lambda: datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     )

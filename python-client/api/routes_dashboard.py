@@ -288,6 +288,179 @@ def batch_detail_page(request: Request, batch_id: str):
     )
 
 
+# ── Deployment (Stage 13) ──────────────────────────────────────────
+
+
+@router.get("/dashboard/deploy")
+def deploy_page(request: Request):
+    return _render(request, "deploy.html", {"title": "Deploy Contract"})
+
+
+@router.post("/dashboard/deploy")
+async def deploy_submit(
+    request: Request,
+    network: str = Form(...),
+    confirm: str = Form(""),
+    dry_run: str = Form(""),
+    update_env: str = Form(""),
+):
+    is_dry_run = dry_run in ("1", "on", "true")
+    is_confirmed = confirm in ("1", "on", "true")
+
+    if not is_dry_run and not is_confirmed:
+        return _error(
+            request,
+            "Deployment requires the confirm checkbox because it broadcasts "
+            "an on-chain transaction.",
+            title="Confirmation Required",
+        )
+
+    try:
+        from proof_client.deploy_contract import (
+            deploy_contract,
+            update_env_contract_address,
+        )
+        from proof_client.network_config import load_network_config
+
+        record = deploy_contract(network_key=network, dry_run=is_dry_run)
+        if record is None:
+            result = {
+                "dry_run": True,
+                "network": network,
+                "message": "Dry run passed: configuration, wallet, artifact "
+                           "and gas estimate are valid. No transaction was "
+                           "broadcast.",
+            }
+        else:
+            if update_env in ("1", "on", "true"):
+                cfg = load_network_config(network)
+                update_env_contract_address(
+                    cfg.contract_address_env_key, record.contract_address
+                )
+            result = record.to_dict()
+        return _render(
+            request, "result.html", {"title": "Deployment Result", "result": result}
+        )
+    except Exception as exc:
+        return _error(request, str(exc), title="Deployment Error")
+
+
+@router.get("/dashboard/deployments")
+def deployments_page(request: Request):
+    try:
+        from proof_client.deployment_repository import list_deployment_records
+
+        records = [r.to_dict() for r in list_deployment_records()]
+        return _render(
+            request,
+            "deployments.html",
+            {"title": "Deployment History", "records": records},
+        )
+    except Exception as exc:
+        return _error(request, str(exc), title="Deployments Error", status_code=500)
+
+
+# ── Gas study (Stage 13) ───────────────────────────────────────────
+
+
+@router.get("/dashboard/gas-study")
+def gas_study_page(request: Request):
+    return _render(request, "gas_study.html", {"title": "Run Gas Study"})
+
+
+@router.post("/dashboard/gas-study")
+async def gas_study_submit(
+    request: Request,
+    network: str = Form(...),
+    batch_size: int = Form(5),
+    confirm: str = Form(""),
+    dry_run: str = Form(""),
+    include_merkle: str = Form(""),
+    include_ipfs: str = Form(""),
+    include_encrypted_ipfs: str = Form(""),
+):
+    is_dry_run = dry_run in ("1", "on", "true")
+    is_confirmed = confirm in ("1", "on", "true")
+
+    if not is_dry_run and not is_confirmed:
+        return _error(
+            request,
+            "A gas study requires the confirm checkbox because it broadcasts "
+            "on-chain transactions.",
+            title="Confirmation Required",
+        )
+
+    try:
+        from proof_client.gas_study import run_gas_study
+
+        study = run_gas_study(
+            network_key=network,
+            batch_size=batch_size,
+            include_merkle=include_merkle in ("1", "on", "true"),
+            include_ipfs=include_ipfs in ("1", "on", "true"),
+            include_encrypted_ipfs=include_encrypted_ipfs in ("1", "on", "true"),
+            dry_run=is_dry_run,
+        )
+        if is_dry_run:
+            return _render(
+                request,
+                "result.html",
+                {"title": "Gas Study Dry Run", "result": study},
+            )
+        return gas_study_detail_page(request, study["study_id"])
+    except Exception as exc:
+        return _error(request, str(exc), title="Gas Study Error")
+
+
+@router.get("/dashboard/gas-studies")
+def gas_studies_page(request: Request):
+    try:
+        from api.routes_gas import list_studies
+
+        data = list_studies()
+        return _render(
+            request,
+            "gas_studies.html",
+            {"title": "Gas Studies", "studies": data.get("studies", [])},
+        )
+    except Exception as exc:
+        return _error(request, str(exc), title="Gas Studies Error", status_code=500)
+
+
+@router.get("/dashboard/gas-studies/{study_id}")
+def gas_study_detail_page(request: Request, study_id: str):
+    try:
+        import json as _json
+
+        from fastapi import HTTPException as _HTTPException
+
+        from api.routes_gas import _study_dir
+        from proof_client.gas_report import compute_merkle_savings, summarize_workflows
+
+        try:
+            d = _study_dir(study_id)
+        except _HTTPException as exc:
+            return _error(
+                request, str(exc.detail), title="Not Found",
+                status_code=exc.status_code,
+            )
+        study = _json.loads((d / "gas_study.json").read_text(encoding="utf-8"))
+        summaries = summarize_workflows(study.get("records", []))
+        savings = compute_merkle_savings(summaries)
+        return _render(
+            request,
+            "gas_report.html",
+            {
+                "title": f"Gas Study {study_id}",
+                "study": study,
+                "summaries": summaries,
+                "merkle_savings": savings,
+            },
+        )
+    except Exception as exc:
+        return _error(request, str(exc), title="Gas Study Error", status_code=500)
+
+
 # ── Packages ───────────────────────────────────────────────────────
 
 

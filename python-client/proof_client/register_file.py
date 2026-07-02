@@ -163,6 +163,17 @@ def register_file(
         used_explorer_base = ""
         used_network_key = resolved_key
 
+    # Stage 13: what the registration actually cost.
+    from proof_client.gas_cost import calculate_gas_cost
+
+    used_token_symbol = net_cfg.native_token_symbol if net_cfg else "ETH"
+    cost = calculate_gas_cost(
+        gas_used=result["gas_used"],
+        effective_gas_price_wei=result.get("effective_gas_price_wei", 0),
+        file_count=1,
+        native_token_symbol=used_token_symbol,
+    )
+
     # 4) Build evidence record
     record = EvidenceRecord(
         file_name=file_name,
@@ -179,6 +190,10 @@ def register_file(
         explorer_tx_url=used_explorer_tx_url,
         network_key=used_network_key,
         explorer_base_url=used_explorer_base,
+        effective_gas_price_wei=cost.effective_gas_price_wei,
+        total_fee_wei=cost.total_fee_wei,
+        total_fee_eth=cost.total_fee_eth,
+        native_token_symbol=cost.native_token_symbol,
         note=note,
     )
 

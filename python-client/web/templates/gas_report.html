@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>📊 Gas Study — {{ study.study_id }}</h2>
+<p class="text-muted">
+  {{ study.network_display_name }} (chain ID {{ study.chain_id }}) —
+  batch size {{ study.batch_size }} — created {{ (study.created_at_utc or "")[:19] }}
+</p>
+
+{% if study.contract_address %}
+<p><strong>Contract:</strong> <code>{{ study.contract_address }}</code></p>
+{% endif %}
+
+<h4 class="mt-4">Cost per Workflow</h4>
+<div class="table-responsive">
+  <table class="table table-hover table-sm align-middle">
+    <thead class="table-dark">
+      <tr>
+        <th>Workflow</th>
+        <th>Files</th>
+        <th>Txs</th>
+        <th>Total Gas</th>
+        <th>Gas / File</th>
+        <th>Total Fee ({{ study.native_token_symbol or "ETH" }})</th>
+        <th>Cost / File ({{ study.native_token_symbol or "ETH" }})</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for wf, s in summaries.items() %}
+      <tr>
+        <td>{{ wf }}</td>
+        <td>{{ s.file_count }}</td>
+        <td>{{ s.tx_count }}</td>
+        <td>{{ s.total_gas_used }}</td>
+        <td>{{ s.gas_per_file }}</td>
+        <td>{{ s.total_fee_eth }}</td>
+        <td>{{ s.cost_per_file_eth }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% if merkle_savings is not none %}
+<div class="alert alert-success">
+  💰 <strong>Merkle batching saves {{ "%.2f" | format(merkle_savings) }}% per file</strong>
+  compared with single-file registration at this batch size.
+</div>
+{% endif %}
+
+<h4 class="mt-4">Transactions</h4>
+<div class="table-responsive">
+  <table class="table table-hover table-sm align-middle">
+    <thead class="table-dark">
+      <tr>
+        <th>Workflow</th>
+        <th>Tx Hash</th>
+        <th>Block</th>
+        <th>Gas Used</th>
+        <th>Fee</th>
+        <th>Files</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in study.records %}
+      <tr>
+        <td>{{ r.workflow }}</td>
+        <td class="hash-text">{{ (r.transaction_hash or "")[:16] }}…</td>
+        <td>{{ r.block_number }}</td>
+        <td>{{ r.gas_used }}</td>
+        <td>{{ r.total_fee_eth }}</td>
+        <td>{{ r.file_count }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<h4 class="mt-4">Downloads</h4>
+<a href="/gas/studies/{{ study.study_id }}/report?format=json" class="btn btn-sm btn-outline-primary">JSON</a>
+<a href="/gas/studies/{{ study.study_id }}/report?format=csv" class="btn btn-sm btn-outline-primary">CSV</a>
+<a href="/gas/studies/{{ study.study_id }}/report?format=md" class="btn btn-sm btn-outline-primary">Markdown</a>
+<a href="/gas/studies/{{ study.study_id }}/report?format=pdf" class="btn btn-sm btn-outline-primary">PDF</a>
+
+<div class="mt-3">
+  <a href="/dashboard/gas-studies" class="btn btn-outline-secondary">Back to Studies</a>
+</div>
+{% endblock %}

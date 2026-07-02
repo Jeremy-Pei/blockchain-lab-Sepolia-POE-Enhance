@@ -70,6 +70,15 @@ blockchain-lab-Sepolia-POE-Enhance/
 │   │   ├── merkle_report.py    #   Stage 9: batch Markdown + PDF certificate
 │   │   ├── batch_merkle_register.py  # Stage 9: batch registration CLI
 │   │   ├── verify_merkle_proof.py    # Stage 9: per-file Merkle proof verify CLI
+│   │   ├── network_config.py   #   Stage 12: multi-network JSON config layer
+│   │   ├── network_context.py  #   Stage 12/13: validated Web3 contexts + address resolution
+│   │   ├── deploy_contract.py  #   Stage 13: contract deployment CLI
+│   │   ├── deployment_record.py       # Stage 13: deployment record schema
+│   │   ├── deployment_repository.py   # Stage 13: deployment SQLite repository
+│   │   ├── gas_cost.py         #   Stage 13: gas cost calculation
+│   │   ├── gas_study.py        #   Stage 13: standardised gas study CLI
+│   │   ├── gas_report.py       #   Stage 13: gas study Markdown/PDF reports
+│   │   ├── generate_gas_samples.py    # Stage 13: deterministic sample files
 │   │   ├── test_all.py         #   Full module test suite
 │   │   ├── test_stage6.py      #   Stage 6 test suite
 │   │   ├── test_stage7.py      #   Stage 7 test suite (IPFS)
@@ -196,6 +205,24 @@ python -m proof_client.test_stage12_networks
 # Stage 12: Multi-network support — API (55 test cases)
 python -m api.test_stage12_networks_api
 
+# Stage 13: Deployment automation (86 test cases)
+python -m proof_client.test_stage13_deployment
+
+# Stage 13: Gas cost model (65 test cases)
+python -m proof_client.test_stage13_gas_cost
+
+# Stage 13: Gas study & reports (89 test cases)
+python -m proof_client.test_stage13_gas_study
+
+# Stage 13: Deployment API (46 test cases)
+python -m api.test_stage13_deployment_api
+
+# Stage 13: Gas study API (41 test cases)
+python -m api.test_stage13_gas_api
+
+# Stage 13: Deploy & gas dashboard pages (46 test cases)
+python -m api.test_stage13_dashboard
+
 # Include on-chain tests (requires Sepolia ETH, consumes gas)
 python -m proof_client.test_all --chain
 ```
@@ -211,6 +238,12 @@ python -m proof_client.test_all --chain
 | Stage 11 (`api.test_stage11_dashboard`) | 78 |
 | Stage 12 core (`proof_client.test_stage12_networks`) | 90 |
 | Stage 12 API (`api.test_stage12_networks_api`) | 55 |
+| Stage 13 deployment (`proof_client.test_stage13_deployment`) | 86 |
+| Stage 13 gas cost (`proof_client.test_stage13_gas_cost`) | 65 |
+| Stage 13 gas study (`proof_client.test_stage13_gas_study`) | 89 |
+| Stage 13 deployment API (`api.test_stage13_deployment_api`) | 46 |
+| Stage 13 gas API (`api.test_stage13_gas_api`) | 41 |
+| Stage 13 dashboard (`api.test_stage13_dashboard`) | 46 |
 
 ## Evidence Package (Stage 6)
 
@@ -506,6 +539,74 @@ PYTHONPATH=. .venv/bin/python -m api.test_stage12_networks_api
 3. The system discovers the file at startup — no code changes needed
 
 📄 Full design: [docs/stage12_multi_network_support.md](docs/stage12_multi_network_support.md)
+
+## Deployment Automation and Gas Cost Study (Stage 13)
+
+Stage 13 adds contract deployment automation and gas cost measurement. The
+system can deploy the ProofOfExistence contract to a selected configured
+network, store deployment records, resolve contract addresses from deployment
+history, and generate gas cost reports for different evidence workflows.
+
+This stage connects the multi-network support from Stage 12 with practical
+cost analysis: Stage 12 answers *where the proof lives*; Stage 13 answers
+*what it costs to put it there*.
+
+### Deploy the Contract
+
+```bash
+cd contracts && forge build && cd ..
+cd python-client
+export PYTHONPATH=.
+
+# Validate config, wallet, artifact and gas estimate — broadcasts nothing
+python -m proof_client.deploy_contract --network anvil --dry-run
+
+# Deploy (requires --confirm because it spends native tokens)
+python -m proof_client.deploy_contract --network anvil --confirm
+python -m proof_client.deploy_contract --network base-sepolia --confirm
+
+# Deploy and write the address into .env
+python -m proof_client.deploy_contract --network base-sepolia --confirm --update-env
+```
+
+Deployments are recorded in SQLite. Contract addresses now resolve in order:
+`.env` env var → latest deployment record → clear error. Mainnet deployment
+is **disabled by default** (`--allow-mainnet` to override), and the private
+key is never printed or stored.
+
+### Run a Gas Study
+
+```bash
+# Measure single-file vs Merkle batch registration cost
+python -m proof_client.gas_study --network base-sepolia --batch-size 10 --confirm
+
+# Optional workflows
+python -m proof_client.gas_study --network sepolia --batch-size 5 \
+    --include-ipfs --include-encrypted-ipfs --confirm
+```
+
+Each study writes `gas_study.json` / `.csv` / `.md` / `_report.pdf` under
+`reports/gas_studies/<study_id>/`, including per-workflow cost-per-file and the
+Merkle savings percentage
+(`savings = 1 − merkle_cost_per_file / single_file_cost_per_file`).
+
+### API & Dashboard
+
+```
+GET  /deployments                    deployment history
+GET  /deployments/latest?network=k   latest deployment for a network
+POST /deployments/deploy             deploy (requires confirm=true)
+GET  /gas/studies                    list gas studies
+GET  /gas/studies/{id}               study + summaries + Merkle savings
+GET  /gas/studies/{id}/report        download md | json | csv | pdf
+POST /gas/studies/run                run a study (requires confirm=true)
+```
+
+Dashboard pages: `/dashboard/deploy`, `/dashboard/deployments`,
+`/dashboard/gas-study`, `/dashboard/gas-studies` — every transaction-
+broadcasting form has a mandatory confirm checkbox.
+
+📄 Full design: [docs/stage13_deployment_and_gas_study.md](docs/stage13_deployment_and_gas_study.md)
 
 ## FastAPI Evidence Service (Stage 10)
 

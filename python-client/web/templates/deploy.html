@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>🚀 Deploy Contract</h2>
+<p class="text-muted">Deploy the ProofOfExistence contract to a configured network.</p>
+
+<div class="alert alert-warning">
+  ⚠️ This action broadcasts on-chain transactions and may spend testnet or real
+  native tokens. Mainnet deployment is disabled by default.
+</div>
+
+<div class="card shadow-sm">
+  <div class="card-body">
+    <form method="post" action="/dashboard/deploy">
+      <div class="mb-3">
+        <label for="network" class="form-label fw-semibold">Network <span class="text-danger">*</span></label>
+        <select class="form-select" id="network" name="network">
+          {% for n in available_networks %}
+          <option value="{{ n.key }}"{% if n.key == current_network_key %} selected{% endif %}>{{ n.name }}</option>
+          {% endfor %}
+        </select>
+        <div class="form-text">Only RPC URL and chain ID are required — deployment creates the contract address.</div>
+      </div>
+      <div class="form-check mb-3">
+        <input class="form-check-input" type="checkbox" id="dry_run" name="dry_run" value="1">
+        <label class="form-check-label" for="dry_run">
+          Dry run — validate config, wallet, artifact and gas estimate without broadcasting
+        </label>
+      </div>
+      <div class="form-check mb-3">
+        <input class="form-check-input" type="checkbox" id="update_env" name="update_env" value="1">
+        <label class="form-check-label" for="update_env">
+          Update the network's contract address in <code>.env</code> after deployment
+        </label>
+      </div>
+      <div class="form-check mb-3">
+        <input class="form-check-input" type="checkbox" id="confirm" name="confirm" value="1">
+        <label class="form-check-label fw-semibold" for="confirm">
+          I understand this broadcasts an on-chain transaction and spends native tokens
+        </label>
+      </div>
+      <button type="submit" class="btn btn-danger">Deploy</button>
+      <a href="/dashboard/deployments" class="btn btn-outline-secondary ms-2">Deployment History</a>
+    </form>
+  </div>
+</div>
+{% endblock %}

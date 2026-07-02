@@ -28,8 +28,10 @@ from fastapi.staticfiles import StaticFiles
 from api import API_NAME, API_VERSION
 from api.routes_batches import router as batches_router
 from api.routes_dashboard import router as dashboard_router
+from api.routes_deployment import router as deployment_router
 from api.routes_evidence import router as evidence_router
 from api.routes_files import router as files_router
+from api.routes_gas import router as gas_router
 from api.routes_health import router as health_router
 from api.routes_networks import router as networks_router
 from api.routes_packages import router as packages_router
@@ -100,3 +102,5 @@ app.include_router(verify_router, prefix="/verify", tags=["Verify"])
 app.include_router(packages_router, prefix="/packages", tags=["Packages"])
 app.include_router(batches_router, prefix="/batches", tags=["Batches"])
 app.include_router(networks_router, prefix="/networks", tags=["Networks"])
+app.include_router(deployment_router, prefix="/deployments", tags=["Deployments"])
+app.include_router(gas_router, prefix="/gas", tags=["Gas Studies"])

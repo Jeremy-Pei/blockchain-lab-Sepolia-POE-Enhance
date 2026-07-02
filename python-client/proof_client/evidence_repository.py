@@ -88,6 +88,14 @@ _NETWORK_COLUMNS = (
     ("explorer_base_url", "TEXT DEFAULT ''"),
 )
 
+# Stage 13 gas cost columns (migrated in on existing databases).
+_GAS_COLUMNS = (
+    ("effective_gas_price_wei", "INTEGER DEFAULT 0"),
+    ("total_fee_wei", "INTEGER DEFAULT 0"),
+    ("total_fee_eth", "TEXT DEFAULT ''"),
+    ("native_token_symbol", "TEXT DEFAULT ''"),
+)
+
 
 def ensure_column(
     conn: sqlite3.Connection,
@@ -110,8 +118,10 @@ def ensure_column(
 
 
 def _migrate(conn: sqlite3.Connection) -> None:
-    """Add any columns missing from a pre-Stage-7 / pre-Stage-8 / pre-Stage-12 database."""
-    for col, col_def in (*_IPFS_COLUMNS, *_ENCRYPTION_COLUMNS, *_NETWORK_COLUMNS):
+    """Add any columns missing from a pre-Stage-7/8/12/13 database."""
+    for col, col_def in (
+        *_IPFS_COLUMNS, *_ENCRYPTION_COLUMNS, *_NETWORK_COLUMNS, *_GAS_COLUMNS
+    ):
         ensure_column(conn, "evidence", col, col_def)
 
 
@@ -244,10 +254,21 @@ _BATCH_NETWORK_COLUMNS = (
     ("explorer_base_url", "TEXT DEFAULT ''"),
 )
 
+# Stage 13 gas cost columns for batch records.
+_BATCH_GAS_COLUMNS = (
+    ("gas_used", "INTEGER DEFAULT 0"),
+    ("effective_gas_price_wei", "INTEGER DEFAULT 0"),
+    ("total_fee_wei", "INTEGER DEFAULT 0"),
+    ("total_fee_eth", "TEXT DEFAULT ''"),
+    ("cost_per_file_wei", "INTEGER DEFAULT 0"),
+    ("cost_per_file_eth", "TEXT DEFAULT ''"),
+    ("native_token_symbol", "TEXT DEFAULT ''"),
+)
+
 
 def _migrate_batch(conn: sqlite3.Connection) -> None:
-    """Add Stage 12 network columns to batch_evidence_records if missing."""
-    for col, col_def in _BATCH_NETWORK_COLUMNS:
+    """Add Stage 12/13 columns to batch_evidence_records if missing."""
+    for col, col_def in (*_BATCH_NETWORK_COLUMNS, *_BATCH_GAS_COLUMNS):
         ensure_column(conn, "batch_evidence_records", col, col_def)
 
 
@@ -282,8 +303,12 @@ def insert_batch_evidence(evidence: dict, db_path: Path | None = None) -> int:
                 batch_id, batch_title, author, description, file_count,
                 merkle_root, uri, network, chain_id, contract_address,
                 owner_address, transaction_hash, block_number, block_timestamp,
-                explorer_url, batch_evidence_json, created_at_utc
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                explorer_url, batch_evidence_json, created_at_utc,
+                network_key, explorer_base_url,
+                gas_used, effective_gas_price_wei, total_fee_wei, total_fee_eth,
+                cost_per_file_wei, cost_per_file_eth, native_token_symbol
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                      ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 evidence.get("batch_id", ""),
@@ -303,6 +328,15 @@ def insert_batch_evidence(evidence: dict, db_path: Path | None = None) -> int:
                 evidence.get("explorer_url", ""),
                 evidence.get("batch_evidence_json", ""),
                 evidence.get("created_at_utc", ""),
+                evidence.get("network_key", ""),
+                evidence.get("explorer_base_url", ""),
+                evidence.get("gas_used", 0),
+                evidence.get("effective_gas_price_wei", 0),
+                evidence.get("total_fee_wei", 0),
+                evidence.get("total_fee_eth", ""),
+                evidence.get("cost_per_file_wei", 0),
+                evidence.get("cost_per_file_eth", ""),
+                evidence.get("native_token_symbol", ""),
             ),
         )
         conn.commit()

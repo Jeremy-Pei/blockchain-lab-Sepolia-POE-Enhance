@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>📊 Gas Studies</h2>
+<p class="text-muted">Completed gas cost studies.</p>
+
+{% if studies %}
+<div class="table-responsive">
+  <table class="table table-hover table-sm align-middle">
+    <thead class="table-dark">
+      <tr>
+        <th>Study ID</th>
+        <th>Network</th>
+        <th>Batch Size</th>
+        <th>Workflows</th>
+        <th>Txs</th>
+        <th>Created At</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in studies %}
+      <tr>
+        <td class="hash-text">{{ s.study_id }}</td>
+        <td>{{ s.network_display_name or s.network_key }}</td>
+        <td>{{ s.batch_size }}</td>
+        <td>{{ s.workflows | join(", ") }}</td>
+        <td>{{ s.tx_count }}</td>
+        <td>{{ (s.created_at_utc or "")[:19] }}</td>
+        <td>
+          <a href="/dashboard/gas-studies/{{ s.study_id }}" class="btn btn-sm btn-outline-primary">View</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="alert alert-info">No gas studies found. Run a gas study to get started.</div>
+{% endif %}
+
+<a href="/dashboard/gas-study" class="btn btn-primary mt-2">Run Gas Study</a>
+<a href="/" class="btn btn-outline-secondary mt-2 ms-2">Back</a>
+{% endblock %}

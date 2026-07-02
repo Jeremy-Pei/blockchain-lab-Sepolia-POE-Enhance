@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>⛽ Run Gas Study</h2>
+<p class="text-muted">Measure the gas cost of evidence workflows on a network.</p>
+
+<div class="alert alert-warning">
+  ⚠️ This action broadcasts on-chain transactions and may spend testnet or real
+  native tokens. A study of batch size N sends at least N + 1 transactions.
+</div>
+
+<div class="card shadow-sm">
+  <div class="card-body">
+    <form method="post" action="/dashboard/gas-study">
+      <div class="mb-3">
+        <label for="network" class="form-label fw-semibold">Network <span class="text-danger">*</span></label>
+        <select class="form-select" id="network" name="network">
+          {% for n in available_networks %}
+          <option value="{{ n.key }}"{% if n.key == current_network_key %} selected{% endif %}>{{ n.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="mb-3">
+        <label for="batch_size" class="form-label fw-semibold">Sample size (files per workflow)</label>
+        <input type="number" class="form-control" id="batch_size" name="batch_size"
+               value="5" min="1" max="50">
+      </div>
+      <div class="mb-3">
+        <span class="form-label fw-semibold d-block">Workflows</span>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" checked disabled>
+          <label class="form-check-label">Single-file registration (always included)</label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="include_merkle" name="include_merkle" value="1" checked>
+          <label class="form-check-label" for="include_merkle">Merkle batch registration</label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="include_ipfs" name="include_ipfs" value="1">
+          <label class="form-check-label" for="include_ipfs">IPFS registration</label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="include_encrypted_ipfs" name="include_encrypted_ipfs" value="1">
+          <label class="form-check-label" for="include_encrypted_ipfs">Encrypted IPFS registration</label>
+        </div>
+      </div>
+      <div class="form-check mb-3">
+        <input class="form-check-input" type="checkbox" id="dry_run" name="dry_run" value="1">
+        <label class="form-check-label" for="dry_run">Dry run — print the study plan without broadcasting</label>
+      </div>
+      <div class="form-check mb-3">
+        <input class="form-check-input" type="checkbox" id="confirm" name="confirm" value="1">
+        <label class="form-check-label fw-semibold" for="confirm">
+          I understand this broadcasts on-chain transactions and spends native tokens
+        </label>
+      </div>
+      <button type="submit" class="btn btn-danger">Run Gas Study</button>
+      <a href="/dashboard/gas-studies" class="btn btn-outline-secondary ms-2">Past Studies</a>
+    </form>
+  </div>
+</div>
+{% endblock %}

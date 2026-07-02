@@ -4,11 +4,18 @@ routes_networks.py — Network configuration endpoints (Stage 12)
 GET /networks              list all enabled network configs
 GET /networks/current      return the currently active default network
 GET /networks/{network_key} return a single network config by key
+
+Stage 13: each network now also reports its deployment status —
+  configured → JSON config exists (always true for listed networks)
+  deployed   → a deployment record exists in SQLite
+  ready      → a contract address is resolvable (env var or deployment)
 """
 
 from fastapi import APIRouter, HTTPException
 
+from proof_client.deployment_repository import get_latest_deployment
 from proof_client.network_config import (
+    NetworkConfig,
     get_default_network_key,
     list_network_configs,
     load_network_config,
@@ -17,9 +24,23 @@ from proof_client.network_config import (
 router = APIRouter()
 
 
+def _deployment_status(cfg: NetworkConfig) -> dict:
+    """Stage 13: configured / deployed / ready flags + resolved address."""
+    latest = get_latest_deployment(cfg.network_key)
+    contract_address = cfg.contract_address or (
+        latest.contract_address if latest else ""
+    )
+    return {
+        "configured": True,
+        "deployed": latest is not None,
+        "ready": bool(contract_address),
+        "contract_address": contract_address,
+    }
+
+
 @router.get("")
 def list_networks():
-    """List all enabled network configurations."""
+    """List all enabled network configurations with deployment status."""
     configs = list_network_configs()
     return {
         "status": "ok",
@@ -33,6 +54,7 @@ def list_networks():
                 "is_testnet": c.is_testnet,
                 "enabled": c.enabled,
                 "explorer_base_url": c.explorer_base_url,
+                **_deployment_status(c),
             }
             for c in configs
         ],
@@ -76,4 +98,5 @@ def get_network(network_key: str):
         "native_token_symbol": cfg.native_token_symbol,
         "is_testnet": cfg.is_testnet,
         "enabled": cfg.enabled,
+        **_deployment_status(cfg),
     }

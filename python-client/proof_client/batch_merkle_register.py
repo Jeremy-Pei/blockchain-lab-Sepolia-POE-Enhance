@@ -514,6 +514,18 @@ def run_batch_registration(
     used_explorer_base = net_cfg.explorer_base_url if net_cfg else ""
     used_network_key = net_cfg.network_key if net_cfg else resolved_key
 
+    # Stage 13: one transaction covers the whole batch, so the per-file cost
+    # is the total fee divided by the number of leaves.
+    from proof_client.gas_cost import calculate_gas_cost
+
+    used_token_symbol = net_cfg.native_token_symbol if net_cfg else "ETH"
+    cost = calculate_gas_cost(
+        gas_used=tx_result.get("gas_used", 0) if tx_result else 0,
+        effective_gas_price_wei=tx_result.get("effective_gas_price_wei", 0) if tx_result else 0,
+        file_count=len(leaves),
+        native_token_symbol=used_token_symbol,
+    )
+
     evidence = BatchEvidence(
         batch_id=batch_id,
         batch_title=title,
@@ -532,6 +544,13 @@ def run_batch_registration(
         chain_id=used_chain_id,
         network_key=used_network_key,
         explorer_base_url=used_explorer_base,
+        gas_used=cost.gas_used,
+        effective_gas_price_wei=cost.effective_gas_price_wei,
+        total_fee_wei=cost.total_fee_wei,
+        total_fee_eth=cost.total_fee_eth if cost.total_fee_wei else "",
+        cost_per_file_wei=cost.cost_per_file_wei,
+        cost_per_file_eth=cost.cost_per_file_eth if cost.total_fee_wei else "",
+        native_token_symbol=used_token_symbol,
     )
 
     # 7. Write evidence files.

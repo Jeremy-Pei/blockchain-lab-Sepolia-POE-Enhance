@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>📜 Deployment History</h2>
+<p class="text-muted">Contract deployment records across all networks.</p>
+
+{% if records %}
+<div class="table-responsive">
+  <table class="table table-hover table-sm align-middle">
+    <thead class="table-dark">
+      <tr>
+        <th>Network</th>
+        <th>Contract</th>
+        <th>Address</th>
+        <th>Tx Hash</th>
+        <th>Block</th>
+        <th>Gas Used</th>
+        <th>Fee</th>
+        <th>Deployed At</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in records %}
+      <tr>
+        <td>{{ r.network_display_name or r.network_key }}</td>
+        <td>{{ r.contract_name }}</td>
+        <td class="hash-text">{{ (r.contract_address or "")[:14] }}{% if r.contract_address %}…{% endif %}</td>
+        <td class="hash-text">
+          {% if r.explorer_url %}
+          <a href="{{ r.explorer_url }}" target="_blank">{{ (r.transaction_hash or "")[:14] }}…</a>
+          {% else %}
+          {{ (r.transaction_hash or "")[:14] }}{% if r.transaction_hash %}…{% endif %}
+          {% endif %}
+        </td>
+        <td>{{ r.block_number }}</td>
+        <td>{{ r.gas_used }}</td>
+        <td>{{ r.deployment_fee_eth or "—" }}</td>
+        <td>{{ (r.created_at_utc or "")[:19] }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="alert alert-info">No deployment records found. Deploy a contract to get started.</div>
+{% endif %}
+
+<a href="/dashboard/deploy" class="btn btn-primary mt-2">Deploy Contract</a>
+<a href="/" class="btn btn-outline-secondary mt-2 ms-2">Back</a>
+{% endblock %}

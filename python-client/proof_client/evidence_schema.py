@@ -43,6 +43,14 @@ class EvidenceRecord:
     network_key: str = ""
     explorer_base_url: str = ""
 
+    # ── Stage 13: gas cost fields ──
+    # gas_used (above) records how much gas the tx consumed; these record
+    # what it actually COST. Defaults keep pre-Stage-13 records loading.
+    effective_gas_price_wei: int = 0
+    total_fee_wei: int = 0
+    total_fee_eth: str = ""
+    native_token_symbol: str = ""
+
     # ── IPFS off-chain storage (Stage 7) ──
     # Optional and defaulted, so older evidence JSON without these keys
     # still deserialises cleanly via from_dict().

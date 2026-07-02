@@ -82,10 +82,17 @@ def register_hash(
     tx_hash = w3.eth.send_raw_transaction(signed.raw_transaction)
     receipt = w3.eth.wait_for_transaction_receipt(tx_hash, timeout=120)
 
+    # Stage 13: what the transaction actually cost. Legacy-tx receipts on
+    # some nodes omit effectiveGasPrice; fall back to the submitted gasPrice.
+    effective_gas_price = getattr(receipt, "effectiveGasPrice", None)
+    if effective_gas_price is None:
+        effective_gas_price = tx.get("gasPrice", 0)
+
     return {
         "tx_hash": receipt.transactionHash.hex(),
         "block_number": receipt.blockNumber,
         "gas_used": receipt.gasUsed,
+        "effective_gas_price_wei": int(effective_gas_price),
         "status": "success" if receipt.status == 1 else "failed",
         "contract_address": used_contract_address,
         "network_key": network_key,
